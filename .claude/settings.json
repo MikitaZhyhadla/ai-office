@@ -11,7 +11,13 @@
       "Bash(curl -s http://localhost:3000/api/agents -X POST -H \"Content-Type: application/json\" -d '{\"system\":\"test\",\"messages\":[]}')",
       "Bash(git add *)",
       "Bash(git commit -m ' *)",
-      "Bash(curl -s http://localhost:3000/api/agents -X POST -H \"Content-Type: application/json\" -d '{\"system\":\"Reply with only the word OK.\",\"messages\":[{\"role\":\"user\",\"content\":\"ping\"}]}')"
+      "Bash(curl -s http://localhost:3000/api/agents -X POST -H \"Content-Type: application/json\" -d '{\"system\":\"Reply with only the word OK.\",\"messages\":[{\"role\":\"user\",\"content\":\"ping\"}]}')",
+      "Bash(npx tsc *)",
+      "Bash(git push *)",
+      "Bash(curl -s http://localhost:3000/api/agents -X POST -H 'Content-Type: application/json' -d '{ *)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); text=''.join\\(c['text'] for c in d.get\\('content',[]\\)\\); print\\(text[:400]\\)\")",
+      "Bash(curl -s http://localhost:3000/api/agents -X POST -H 'Content-Type: application/json' -d '{\"system\":\"You are a BA agent. Return ONLY valid JSON, no markdown: {\\\\\"title\\\\\":\\\\\"string\\\\\",\\\\\"format\\\\\":\\\\\"gwt\\\\\",\\\\\"scenarios\\\\\":[{\\\\\"name\\\\\":\\\\\"s\\\\\",\\\\\"given\\\\\":\\\\\"s\\\\\",\\\\\"when\\\\\":\\\\\"s\\\\\",\\\\\"then\\\\\":\\\\\"s\\\\\"}],\\\\\"story_points\\\\\":3,\\\\\"priority\\\\\":\\\\\"high\\\\\"}\",\"messages\":[{\"role\":\"user\",\"content\":\"User can log in with email and password\"}]}')",
+      "Bash(curl -s http://localhost:3000/api/agents -X POST -H 'Content-Type: application/json' -d '{\"system\":\"Reply with only the word OK.\",\"messages\":[{\"role\":\"user\",\"content\":\"ping\"}]}')"
     ]
   }
 }
