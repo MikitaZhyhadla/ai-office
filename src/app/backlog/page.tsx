@@ -3,6 +3,7 @@ import { useAppStore } from "@/store/useAppStore"
 import { Topbar } from "@/components/shared/Topbar"
 import { SprintPanel } from "@/components/backlog/SprintPanel"
 import { TicketRow } from "@/components/backlog/TicketRow"
+import { ExportButton } from "@/components/shared/ExportButton"
 
 export default function BacklogPage() {
   const { tickets, sprints } = useAppStore()
@@ -19,6 +20,9 @@ export default function BacklogPage() {
           <span style={{ fontSize:10, fontWeight:500, padding:"3px 9px", borderRadius:20, background:"#EEEDFE", color:"#3C3489" }}>
             {tickets.length} tickets
           </span>
+          <div style={{ marginLeft:"auto" }}>
+            <ExportButton />
+          </div>
         </div>
 
         <SprintPanel sprint={sprint} tickets={sprintTickets} />
