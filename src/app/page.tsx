@@ -12,7 +12,7 @@ import { baAgentClassic } from "@/agents/baAgentClassic"
 import { baAgentRevise } from "@/agents/baAgentRevise"
 import { qaAgent } from "@/agents/qaAgent"
 import { devAgent } from "@/agents/devAgent"
-import type { Format, RequirementData, Ticket } from "@/types"
+import type { Format, RequirementData, Ticket, TicketHistoryEntry } from "@/types"
 import type { QAVerdict } from "@/agents/qaAgent"
 import type { DevVerdict } from "@/agents/devAgent"
 
@@ -126,15 +126,37 @@ export default function PipelinePage() {
 
   function createTicket(req: RequirementData, qa: QAVerdict, dev: DevVerdict, issueNote?: string) {
     const points = dev.sp_override ?? req.story_points
+    const id = `TICK-${Date.now().toString().slice(-4)}`
+    const now = new Date().toISOString()
+    const baName = req.format === "gwt" ? "Alice BA" : "Bob BA"
+    const baRole: TicketHistoryEntry["actorRole"] = "ba"
+
+    const history: TicketHistoryEntry[] = [
+      { id: crypto.randomUUID(), timestamp: now, actor: baName, actorRole: baRole, message: "Generated requirement" },
+      { id: crypto.randomUUID(), timestamp: now, actor: "Human", actorRole: "human", message: "Approved requirement for QA/Dev check" },
+      { id: crypto.randomUUID(), timestamp: now, actor: "QA Lead", actorRole: "qa", message: qa.summary },
+      { id: crypto.randomUUID(), timestamp: now, actor: "Dev Lead", actorRole: "dev", message: dev.summary },
+    ]
+    if (issueNote) {
+      history.push({ id: crypto.randomUUID(), timestamp: now, actor: "Human", actorRole: "human", message: "Approved with known issues" })
+    }
+    if (revisionCount > 0) {
+      history.splice(1, 0, { id: crypto.randomUUID(), timestamp: now, actor: baName, actorRole: baRole, message: `Revised requirement (${revisionCount} round${revisionCount > 1 ? 's' : ''})` })
+    }
+    history.push({ id: crypto.randomUUID(), timestamp: now, actor: "System", actorRole: "system", message: `Ticket ${id} created` })
+
     const ticket: Ticket = {
-      id: `TICK-${Date.now().toString().slice(-4)}`,
+      id,
       title: req.title,
       format: req.format,
       priority: req.priority,
       points,
       status: "todo",
       data: req,
-      createdAt: new Date().toISOString(),
+      createdAt: now,
+      qaVerdict: qa,
+      devVerdict: dev,
+      history,
     }
     addTicket(ticket)
     incPipeline("qa", -1)

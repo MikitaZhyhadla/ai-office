@@ -9,11 +9,16 @@ interface Props {
 }
 
 export function TicketRow({ ticket, sprintId, isInSprint }: Props) {
-  const toggleSprint = useAppStore(s => s.toggleSprint)
+  const toggleSprint      = useAppStore(s => s.toggleSprint)
+  const setSelectedTicket = useAppStore(s => s.setSelectedTicket)
   const priorityColor = ticket.priority === "high" ? "#E24B4A" : ticket.priority === "medium" ? "#EF9F27" : "#639922"
 
   return (
-    <div style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 0", borderBottom:"1px solid #f0f0f7" }}>
+    <div onClick={() => setSelectedTicket(ticket.id)}
+         style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 0",
+                  borderBottom:"1px solid #f0f0f7", cursor:"pointer" }}
+         onMouseEnter={e => (e.currentTarget.style.background = "#fafafe")}
+         onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
       <div style={{ width:3, height:30, borderRadius:2, background:priorityColor, flexShrink:0 }} />
       <div style={{ fontSize:11, color:"#aaa", width:68, fontFamily:"monospace", flexShrink:0 }}>{ticket.id}</div>
       <div style={{ fontSize:13, flex:1 }}>{ticket.title}</div>
@@ -27,7 +32,7 @@ export function TicketRow({ ticket, sprintId, isInSprint }: Props) {
           fontSize:10, padding:"2px 8px", color:"#534AB7", fontWeight:600 }}>
           {ticket.points} SP
         </span>
-        <button onClick={() => toggleSprint(ticket.id, sprintId)}
+        <button onClick={e => { e.stopPropagation(); toggleSprint(ticket.id, sprintId) }}
           style={{ fontSize:11, padding:"4px 12px", borderRadius:20, cursor:"pointer", fontFamily:"inherit",
             background: isInSprint ? "#EEEDFE" : "none",
             border: isInSprint ? "1px solid #AFA9EC" : "1px solid #ddd",

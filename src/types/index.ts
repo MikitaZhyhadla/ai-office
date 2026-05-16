@@ -1,7 +1,19 @@
+import type { QAVerdict } from "@/agents/qaAgent"
+import type { DevVerdict } from "@/agents/devAgent"
+
 export type Format = 'gwt' | 'classic'
 export type Priority = 'high' | 'medium' | 'low'
 export type AgentStatus = 'idle' | 'thinking' | 'working'
 export type KanbanColumn = 'todo' | 'inprog' | 'review' | 'done'
+
+export interface TicketHistoryEntry {
+  id: string
+  timestamp: string
+  actor: string
+  actorRole: 'ba' | 'qa' | 'dev' | 'human' | 'system'
+  message: string
+}
+
 export interface GWTScenario {
   name: string
   given: string
@@ -39,6 +51,9 @@ export interface Ticket {
   data: RequirementData
   sprintId?: string
   createdAt: string
+  qaVerdict?: QAVerdict
+  devVerdict?: DevVerdict
+  history?: TicketHistoryEntry[]
 }
 export interface Agent {
   id: string
@@ -61,3 +76,5 @@ export interface LogEntry {
   agentRole: 'ba' | 'qa' | 'dev' | 'human' | 'system'
   message: string
 }
+
+export type { QAVerdict, DevVerdict }
