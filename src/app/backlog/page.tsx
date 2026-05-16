@@ -2,17 +2,26 @@
 import { useState } from "react"
 import { useAppStore } from "@/store/useAppStore"
 import { useAuthStore } from "@/store/useAuthStore"
+import { useSettingsStore } from "@/store/useSettingsStore"
 import { Topbar } from "@/components/shared/Topbar"
 import { SprintPanel } from "@/components/backlog/SprintPanel"
 import { TicketRow } from "@/components/backlog/TicketRow"
 import { ExportButton } from "@/components/shared/ExportButton"
 import { CreateTicketModal } from "@/components/backlog/CreateTicketModal"
-import type { Ticket } from "@/types"
+import { RetroModal } from "@/components/backlog/RetroModal"
+import { runRetroAgent } from "@/agents/retroAgent"
+import type { Ticket, RetroReport } from "@/types"
 
 export default function BacklogPage() {
-  const { tickets, sprints, addTicket } = useAppStore()
+  const { tickets, sprints, addTicket, closeSprintWithRetro } = useAppStore()
   const currentUser = useAuthStore(s => s.currentUser)
+  const { projectName, projectDescription } = useSettingsStore()
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [retroLoading, setRetroLoading] = useState(false)
+  const [retroModalOpen, setRetroModalOpen] = useState(false)
+  const [retroReport, setRetroReport] = useState<RetroReport | null>(null)
+  const [avgCycleTimeDays, setAvgCycleTimeDays] = useState<number | null>(null)
+
   const sprint = sprints[0]
   const myTickets = tickets.filter(t => t.userId === currentUser?.username)
   const sprintTickets = myTickets.filter(t => sprint.ticketIds.includes(t.id))
@@ -20,6 +29,85 @@ export default function BacklogPage() {
 
   function handleCreateTicket(ticket: Ticket) {
     addTicket(ticket)
+  }
+
+  async function handleCloseSprintAndRetro() {
+    setRetroLoading(true)
+    setRetroModalOpen(true)
+    setRetroReport(null)
+
+    try {
+      const agentTickets = sprintTickets.map(t => {
+        const history = t.history ?? []
+        const timestamps = history.map(h => new Date(h.timestamp).getTime()).filter(n => !isNaN(n))
+        const cycleTimeMs = timestamps.length >= 2
+          ? Math.max(...timestamps) - Math.min(...timestamps)
+          : 0
+        return {
+          id:          t.id,
+          title:       t.title,
+          format:      t.format,
+          points:      t.points,
+          status:      t.status,
+          baRevisions: history.filter(h => h.actorRole === 'ba').length,
+          qaIssues:    t.qaVerdict?.issues?.length ?? 0,
+          devBlockers: t.devVerdict?.blockers?.length ?? 0,
+          cycleTimeMs,
+        }
+      })
+
+      const doneCycleTimes = agentTickets
+        .filter(t => t.status === 'done' && t.cycleTimeMs > 0)
+        .map(t => t.cycleTimeMs)
+      const avgMs = doneCycleTimes.length > 0
+        ? doneCycleTimes.reduce((a, b) => a + b, 0) / doneCycleTimes.length
+        : null
+      const avgDays = avgMs != null ? Math.round(avgMs / (1000 * 60 * 60 * 24)) : null
+      setAvgCycleTimeDays(avgDays)
+
+      const result = await runRetroAgent({
+        sprintName:         sprint.name,
+        startDate:          sprint.startDate,
+        endDate:            sprint.endDate,
+        projectName:        projectName || 'AI Office Project',
+        projectDescription: projectDescription || 'A requirements pipeline tool.',
+        tickets:            agentTickets,
+      })
+
+      setRetroReport(result)
+      closeSprintWithRetro(sprint.id, result)
+    } catch (err) {
+      console.error('Retro generation failed:', err)
+      setRetroModalOpen(false)
+      alert('Failed to generate retrospective. Please try again.')
+    } finally {
+      setRetroLoading(false)
+    }
+  }
+
+  async function handleExportTxt() {
+    if (!retroReport) return
+    try {
+      const res = await fetch('/api/export-retro', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ report: retroReport, sprintName: sprint.name }),
+      })
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `retro-${sprint.name.replace(/\s+/g, '-')}.txt`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      console.error('Export failed:', err)
+    }
+  }
+
+  function handleStartNextSprint() {
+    setRetroModalOpen(false)
+    setRetroReport(null)
   }
 
   return (
@@ -55,7 +143,12 @@ export default function BacklogPage() {
           </div>
         </div>
 
-        <SprintPanel sprint={sprint} tickets={sprintTickets} />
+        <SprintPanel
+          sprint={sprint}
+          tickets={sprintTickets}
+          onCloseSprint={handleCloseSprintAndRetro}
+          retroLoading={retroLoading}
+        />
 
         <div style={{ background:"#fff", border:"1px solid #e8e8f0", borderRadius:10, padding:14 }}>
           {sprintTickets.length > 0 && (
@@ -83,12 +176,24 @@ export default function BacklogPage() {
           ))}
         </div>
       </main>
+
       {showCreateModal && (
         <CreateTicketModal
           onClose={() => setShowCreateModal(false)}
           onSave={handleCreateTicket}
         />
       )}
+
+      <RetroModal
+        isOpen={retroModalOpen}
+        report={retroReport}
+        sprintName={sprint?.name ?? ''}
+        isLoading={retroLoading}
+        avgCycleTimeDays={avgCycleTimeDays}
+        onClose={() => { setRetroModalOpen(false); setRetroReport(null) }}
+        onExport={handleExportTxt}
+        onStartNextSprint={handleStartNextSprint}
+      />
     </div>
   )
 }
