@@ -1,7 +1,7 @@
 "use client"
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
-import type { Ticket, Agent, Sprint, LogEntry, KanbanColumn, TicketHistoryEntry, TestCase } from "@/types"
+import type { Ticket, Agent, Sprint, LogEntry, KanbanColumn, TicketHistoryEntry, TestCase, RetroReport } from "@/types"
 
 function getStoreKey(): string {
   if (typeof window === 'undefined') return 'ai-office-store-guest'
@@ -26,6 +26,7 @@ interface AppState {
   selectedTicketId: string | null
   testCases: Record<string, TestCase[]>
   generatingTcFor: string[]
+  closedSprints: Array<{ sprintId: string; closedAt: string; retro: RetroReport }>
   addTicket: (t: Ticket) => void
   updateTicket: (ticketId: string, patch: Partial<Ticket>) => void
   moveToKanban: (ticket: Ticket, col: KanbanColumn) => void
@@ -39,6 +40,7 @@ interface AppState {
   appendTicketHistory: (ticketId: string, entry: Omit<TicketHistoryEntry, "id">) => void
   setTestCases: (ticketId: string, cases: TestCase[]) => void
   setGeneratingTc: (ticketId: string, loading: boolean) => void
+  closeSprintWithRetro: (sprintId: string, retro: RetroReport) => void
   resetStore: () => void
 }
 
@@ -48,6 +50,7 @@ export const useAppStore = create<AppState>()(
       tickets: [],
       testCases: {},
       generatingTcFor: [],
+      closedSprints: [],
       sprints: [{ id: "sprint-3", name: "Sprint 3", startDate: "2026-05-12", endDate: "2026-05-25", ticketIds: [] }],
       agents: [
         { id: "alice", name: "Alice BA", role: "ba", status: "idle" },
@@ -133,6 +136,17 @@ export const useAppStore = create<AppState>()(
             ? { ...t, history: [...(t.history ?? []), { ...entry, id: crypto.randomUUID() }] }
             : t
         ),
+      })),
+      closeSprintWithRetro: (sprintId, retro) => set(state => ({
+        closedSprints: [
+          ...state.closedSprints,
+          { sprintId, closedAt: new Date().toISOString(), retro }
+        ],
+        sprints: state.sprints.map(s =>
+          s.id === sprintId
+            ? { ...s, status: 'closed', closedAt: new Date().toISOString() }
+            : s
+        )
       })),
       resetStore: () => set({
         tickets: [],

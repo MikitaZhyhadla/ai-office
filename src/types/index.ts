@@ -87,6 +87,20 @@ export interface Sprint {
   startDate: string
   endDate: string
   ticketIds: string[]
+  status?: 'active' | 'closed'
+  closedAt?: string
+}
+
+export interface RetroReport {
+  sprintName:       string
+  totalTickets:     number
+  completedTickets: number
+  velocity:         number
+  revisionRate:     string
+  highlights:       string[]
+  blockers:         string[]
+  suggestions:      string[]
+  agentInsights:    string
 }
 export interface LogEntry {
   id: string
