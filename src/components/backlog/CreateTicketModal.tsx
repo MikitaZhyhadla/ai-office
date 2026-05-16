@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useAppStore } from '@/store/useAppStore'
+import { useAuthStore } from '@/store/useAuthStore'
 import type { Ticket, Format, Priority, GWTRequirement, ClassicRequirement } from '@/types'
 
 interface CreateTicketModalProps {
@@ -11,6 +12,7 @@ interface CreateTicketModalProps {
 const POINTS_OPTIONS = [1, 2, 3, 5, 8, 13]
 
 export function CreateTicketModal({ onClose, onSave }: CreateTicketModalProps) {
+  const currentUser = useAuthStore(s => s.currentUser)
   const [title,    setTitle]    = useState('')
   const [format,   setFormat]   = useState<Format>('gwt')
   const [priority, setPriority] = useState<Priority>('medium')
@@ -79,6 +81,7 @@ export function CreateTicketModal({ onClose, onSave }: CreateTicketModalProps) {
       status: 'todo',
       data,
       createdAt: new Date().toISOString(),
+      userId: currentUser?.username,
       history: [{
         id: crypto.randomUUID(),
         timestamp: new Date().toISOString(),

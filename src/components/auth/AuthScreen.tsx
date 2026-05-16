@@ -222,7 +222,7 @@ export function AuthScreen() {
         {/* Register form */}
         {tab === 'register' && (
           <>
-            <Field label="Display Name"     value={regName}    placeholder="Your full name"      onChange={setRegName}    onClear={() => { clearError(); setLocalError(null) }} />
+            <Field label="Display Project Name" value={regName}    placeholder="Your full project name" onChange={setRegName}    onClear={() => { clearError(); setLocalError(null) }} />
             <Field label="Username"         value={regUser}    placeholder="Choose a username"   onChange={setRegUser}    onClear={() => { clearError(); setLocalError(null) }} />
             <Field label="Password"         type="password" value={regPass}    placeholder="Min. 6 characters"  onChange={setRegPass}    onClear={() => { clearError(); setLocalError(null) }} />
             <Field label="Confirm Password" type="password" value={regConfirm} placeholder="Repeat password"    onChange={setRegConfirm} onClear={() => { clearError(); setLocalError(null) }} />
