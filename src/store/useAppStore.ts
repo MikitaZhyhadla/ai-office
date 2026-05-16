@@ -1,7 +1,7 @@
 "use client"
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
-import type { Ticket, Agent, Sprint, LogEntry, KanbanColumn } from "@/types"
+import type { Ticket, Agent, Sprint, LogEntry, KanbanColumn, TicketHistoryEntry } from "@/types"
 
 interface AppState {
   tickets: Ticket[]
@@ -10,12 +10,17 @@ interface AppState {
   log: LogEntry[]
   pipeline: { ba: number; review: number; qa: number; done: number }
   kanban: { todo: Ticket[]; inprog: Ticket[]; review: Ticket[]; done: Ticket[] }
+  selectedTicketId: string | null
   addTicket: (t: Ticket) => void
   moveToKanban: (ticket: Ticket, col: KanbanColumn) => void
+  moveTicket: (ticketId: string, status: KanbanColumn) => void
+  removeTicket: (ticketId: string) => void
   toggleSprint: (ticketId: string, sprintId: string) => void
   setAgentStatus: (id: string, status: Agent["status"], task?: string) => void
   addLog: (entry: Omit<LogEntry, "id" | "timestamp">) => void
   incPipeline: (stage: keyof AppState["pipeline"], delta: number) => void
+  setSelectedTicket: (id: string | null) => void
+  appendTicketHistory: (ticketId: string, entry: Omit<TicketHistoryEntry, "id">) => void
 }
 
 export const useAppStore = create<AppState>()(
@@ -32,6 +37,7 @@ export const useAppStore = create<AppState>()(
       log: [],
       pipeline: { ba: 0, review: 0, qa: 0, done: 0 },
       kanban: { todo: [], inprog: [], review: [], done: [] },
+      selectedTicketId: null,
       addTicket: (ticket) => set(s => ({
         tickets: [...s.tickets, ticket],
         kanban: { ...s.kanban, todo: [...s.kanban.todo, ticket] },
@@ -43,6 +49,29 @@ export const useAppStore = create<AppState>()(
         next[col] = [...next[col], { ...ticket, status: col }]
         return { kanban: next }
       }),
+      moveTicket: (ticketId, status) => set(s => {
+        const cols: KanbanColumn[] = ["todo","inprog","review","done"]
+        const updatedTickets = s.tickets.map(t => t.id === ticketId ? { ...t, status } : t)
+        const next = { ...s.kanban }
+        cols.forEach(c => { next[c] = next[c].filter(t => t.id !== ticketId) })
+        const moved = updatedTickets.find(t => t.id === ticketId)
+        if (moved) next[status] = [...next[status], moved]
+        return { tickets: updatedTickets, kanban: next }
+      }),
+      removeTicket: (ticketId) => set(s => ({
+        tickets: s.tickets.filter(t => t.id !== ticketId),
+        kanban: {
+          todo:   s.kanban.todo.filter(t => t.id !== ticketId),
+          inprog: s.kanban.inprog.filter(t => t.id !== ticketId),
+          review: s.kanban.review.filter(t => t.id !== ticketId),
+          done:   s.kanban.done.filter(t => t.id !== ticketId),
+        },
+        sprints: s.sprints.map(sp => ({
+          ...sp,
+          ticketIds: sp.ticketIds.filter(id => id !== ticketId),
+        })),
+        selectedTicketId: s.selectedTicketId === ticketId ? null : s.selectedTicketId,
+      })),
       toggleSprint: (ticketId, sprintId) => set(s => ({
         sprints: s.sprints.map(sp =>
           sp.id === sprintId
@@ -60,6 +89,14 @@ export const useAppStore = create<AppState>()(
       })),
       incPipeline: (stage, delta) => set(s => ({
         pipeline: { ...s.pipeline, [stage]: Math.max(0, s.pipeline[stage] + delta) }
+      })),
+      setSelectedTicket: (id) => set({ selectedTicketId: id }),
+      appendTicketHistory: (ticketId, entry) => set(s => ({
+        tickets: s.tickets.map(t =>
+          t.id === ticketId
+            ? { ...t, history: [...(t.history ?? []), { ...entry, id: crypto.randomUUID() }] }
+            : t
+        ),
       })),
     }),
     { name: "ai-office-store" }
