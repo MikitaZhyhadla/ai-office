@@ -12,6 +12,7 @@ import { baAgentClassic } from "@/agents/baAgentClassic"
 import { baAgentRevise } from "@/agents/baAgentRevise"
 import { qaAgent } from "@/agents/qaAgent"
 import { devAgent } from "@/agents/devAgent"
+import { useAuthStore } from "@/store/useAuthStore"
 import type { Format, RequirementData, Ticket, TicketHistoryEntry } from "@/types"
 import type { QAVerdict } from "@/agents/qaAgent"
 import type { DevVerdict } from "@/agents/devAgent"
@@ -20,6 +21,7 @@ type PipelineMode = 'idle' | 'analyzing' | 'review' | 'qa_check' | 'revision' | 
 
 export default function PipelinePage() {
   const { setAgentStatus, addLog, addTicket, incPipeline } = useAppStore()
+  const currentUser = useAuthStore(s => s.currentUser)
   const [loading, setLoading] = useState(false)
   const [mode, setMode] = useState<PipelineMode>('idle')
   const [pendingReview, setPendingReview] = useState<RequirementData | null>(null)
@@ -154,6 +156,7 @@ export default function PipelinePage() {
       status: "todo",
       data: req,
       createdAt: now,
+      userId: currentUser?.username,
       qaVerdict: qa,
       devVerdict: dev,
       history,

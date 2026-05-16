@@ -1,6 +1,7 @@
 "use client"
 import { useState } from "react"
 import { useAppStore } from "@/store/useAppStore"
+import { useAuthStore } from "@/store/useAuthStore"
 import { Topbar } from "@/components/shared/Topbar"
 import { SprintPanel } from "@/components/backlog/SprintPanel"
 import { TicketRow } from "@/components/backlog/TicketRow"
@@ -10,10 +11,12 @@ import type { Ticket } from "@/types"
 
 export default function BacklogPage() {
   const { tickets, sprints, addTicket } = useAppStore()
+  const currentUser = useAuthStore(s => s.currentUser)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const sprint = sprints[0]
-  const sprintTickets = tickets.filter(t => sprint.ticketIds.includes(t.id))
-  const backlogTickets = tickets.filter(t => !sprint.ticketIds.includes(t.id))
+  const myTickets = tickets.filter(t => t.userId === currentUser?.username)
+  const sprintTickets = myTickets.filter(t => sprint.ticketIds.includes(t.id))
+  const backlogTickets = myTickets.filter(t => !sprint.ticketIds.includes(t.id))
 
   function handleCreateTicket(ticket: Ticket) {
     addTicket(ticket)
@@ -26,7 +29,7 @@ export default function BacklogPage() {
         <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:20 }}>
           <span style={{ fontSize:16, fontWeight:600 }}>Product Backlog</span>
           <span style={{ fontSize:10, fontWeight:500, padding:"3px 9px", borderRadius:20, background:"#EEEDFE", color:"#3C3489" }}>
-            {tickets.length} tickets
+            {myTickets.length} tickets
           </span>
           <div style={{ marginLeft:"auto", display:"flex", gap:8, alignItems:"center" }}>
             <ExportButton />

@@ -66,6 +66,7 @@ export interface Ticket {
   data: RequirementData
   sprintId?: string
   createdAt: string
+  userId?: string
   qaVerdict?: QAVerdict
   devVerdict?: DevVerdict
   history?: TicketHistoryEntry[]

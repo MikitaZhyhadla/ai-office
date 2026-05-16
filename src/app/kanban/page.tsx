@@ -5,6 +5,7 @@ import { Topbar } from "@/components/shared/Topbar"
 import { KanbanColumn } from "@/components/kanban/KanbanColumn"
 import { KanbanCard } from "@/components/kanban/KanbanCard"
 import { useAppStore } from "@/store/useAppStore"
+import { useAuthStore } from "@/store/useAuthStore"
 import { qaTestCaseAgent } from "@/agents/qaTestCaseAgent"
 import type { KanbanColumn as ColType, Ticket } from "@/types"
 
@@ -13,10 +14,17 @@ const COLUMNS: ColType[] = ["todo", "inprog", "review", "done"]
 export default function KanbanPage() {
   const { kanban, moveToKanban, sprints, setTestCases, setGeneratingTc,
           setAgentStatus, appendTicketHistory } = useAppStore()
+  const currentUser = useAuthStore(s => s.currentUser)
   const sprint = sprints[0]
   const [activeTicket, setActiveTicket] = useState<Ticket | null>(null)
 
   const allTickets = Object.values(kanban).flat()
+  const myKanban = {
+    todo:   kanban.todo.filter(t => t.userId === currentUser?.username),
+    inprog: kanban.inprog.filter(t => t.userId === currentUser?.username),
+    review: kanban.review.filter(t => t.userId === currentUser?.username),
+    done:   kanban.done.filter(t => t.userId === currentUser?.username),
+  }
 
   async function triggerQATestCases(ticket: Ticket) {
     setAgentStatus('qa1', 'thinking', `Generating test cases for ${ticket.id}`)
@@ -81,7 +89,7 @@ export default function KanbanPage() {
   }
 
   const sprintTicketIds = new Set(sprint.ticketIds)
-  const totalSP = allTickets
+  const totalSP = Object.values(myKanban).flat()
     .filter(t => sprintTicketIds.has(t.id))
     .reduce((sum, t) => sum + t.points, 0)
 
@@ -104,7 +112,7 @@ export default function KanbanPage() {
         <DndContext collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
           <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:12 }}>
             {COLUMNS.map(col => (
-              <KanbanColumn key={col} id={col} tickets={kanban[col]} />
+              <KanbanColumn key={col} id={col} tickets={myKanban[col]} />
             ))}
           </div>
           <DragOverlay>
