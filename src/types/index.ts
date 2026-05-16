@@ -1,6 +1,13 @@
 import type { QAVerdict } from "@/agents/qaAgent"
 import type { DevVerdict } from "@/agents/devAgent"
 
+export interface User {
+  username:    string
+  role:        'Admin' | 'QA' | 'Developer'
+  displayName: string
+  projectName: string
+}
+
 export interface TestCase {
   id:             string
   title:          string
