@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from "react"
 import { useAppStore } from "@/store/useAppStore"
 import { useSettingsStore } from "@/store/useSettingsStore"
 import { pushTicketToJira, pushTicketToAzure } from "@/lib/pushTicket"
+import { DoDChecklistModal } from "./DoDChecklistModal"
 import { TestCasePanel } from "./TestCasePanel"
 import type { GWTRequirement, ClassicRequirement, KanbanColumn, TicketHistoryEntry } from "@/types"
 
@@ -60,6 +61,7 @@ export function TicketModal({ ticketId, onClose }: TicketModalProps) {
   const [azurePushState, setAzurePushState] = useState<"idle" | "loading" | "error">("idle")
   const [jiraError,  setJiraError]  = useState<string | null>(null)
   const [azureError, setAzureError] = useState<string | null>(null)
+  const [dodModalOpen, setDodModalOpen] = useState(false)
 
   const handleKey = useCallback((e: KeyboardEvent) => {
     if (e.key === "Escape") onClose()
@@ -120,6 +122,10 @@ export function TicketModal({ ticketId, onClose }: TicketModalProps) {
 
   const handleMove = () => {
     if (!nextSt) return
+    if (nextSt === "done") {
+      setDodModalOpen(true)
+      return
+    }
     moveTicket(ticket.id, nextSt)
     appendTicketHistory(ticket.id, {
       timestamp: new Date().toISOString(),
@@ -127,6 +133,21 @@ export function TicketModal({ ticketId, onClose }: TicketModalProps) {
       actorRole: "human",
       message: `Moved to ${STATUS_LABEL[nextSt]}`,
     })
+  }
+
+  const handleDodConfirm = (checkedItemIds: string[]) => {
+    const dodItems = useSettingsStore.getState().dodItems
+    const checkedLabels = dodItems
+      .filter(item => checkedItemIds.includes(item.id))
+      .map(item => item.label)
+    moveTicket(ticket.id, "done")
+    appendTicketHistory(ticket.id, {
+      timestamp: new Date().toISOString(),
+      actor: "Human",
+      actorRole: "human",
+      message: `Definition of Done completed — checked: ${checkedLabels.join(', ')}`,
+    })
+    setDodModalOpen(false)
   }
 
   const handleDelete = () => {
@@ -549,6 +570,17 @@ export function TicketModal({ ticketId, onClose }: TicketModalProps) {
           </div>
         </div>
       </div>
+
+      {dodModalOpen && (
+        <DoDChecklistModal
+          isOpen={dodModalOpen}
+          ticketId={ticket.id}
+          ticketTitle={ticket.title}
+          ticketPoints={ticket.points}
+          onConfirm={handleDodConfirm}
+          onCancel={() => setDodModalOpen(false)}
+        />
+      )}
     </div>
   )
 }
