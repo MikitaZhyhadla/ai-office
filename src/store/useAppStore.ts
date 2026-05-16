@@ -3,6 +3,19 @@ import { create } from "zustand"
 import { persist } from "zustand/middleware"
 import type { Ticket, Agent, Sprint, LogEntry, KanbanColumn, TicketHistoryEntry, TestCase } from "@/types"
 
+function getStoreKey(): string {
+  if (typeof window === 'undefined') return 'ai-office-store-guest'
+  try {
+    const raw = localStorage.getItem('ai-office-auth')
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      const username = parsed?.state?.currentUser?.username
+      if (username) return `ai-office-store-${username}`
+    }
+  } catch {}
+  return 'ai-office-store-guest'
+}
+
 interface AppState {
   tickets: Ticket[]
   sprints: Sprint[]
@@ -25,6 +38,7 @@ interface AppState {
   appendTicketHistory: (ticketId: string, entry: Omit<TicketHistoryEntry, "id">) => void
   setTestCases: (ticketId: string, cases: TestCase[]) => void
   setGeneratingTc: (ticketId: string, loading: boolean) => void
+  resetStore: () => void
 }
 
 export const useAppStore = create<AppState>()(
@@ -112,7 +126,16 @@ export const useAppStore = create<AppState>()(
             : t
         ),
       })),
+      resetStore: () => set({
+        tickets: [],
+        kanban: { todo: [], inprog: [], review: [], done: [] },
+        log: [],
+        pipeline: { ba: 0, review: 0, qa: 0, done: 0 },
+        testCases: {},
+        generatingTcFor: [],
+        selectedTicketId: null,
+      }),
     }),
-    { name: "ai-office-store" }
+    { name: getStoreKey() }
   )
 )

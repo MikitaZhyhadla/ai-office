@@ -1,6 +1,7 @@
 'use client'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { useAppStore } from './useAppStore'
 import type { User } from '@/types'
 
 const SEED_USERS = [
@@ -20,6 +21,12 @@ interface AuthState {
 
 // In-memory user list — not persisted (only the session is persisted)
 let runtimeUsers = [...SEED_USERS]
+
+function switchUserStore(username: string) {
+  const key = `ai-office-store-${username}`
+  useAppStore.persist.setOptions({ name: key })
+  useAppStore.persist.rehydrate()
+}
 
 export const useAuthStore = create<AuthState>()(
   persist(
@@ -41,13 +48,19 @@ export const useAuthStore = create<AuthState>()(
             },
             error: null,
           })
+          switchUserStore(user.username)
           return true
         }
         set({ error: 'Invalid username or password' })
         return false
       },
 
-      logout: () => set({ currentUser: null, error: null }),
+      logout: () => {
+        // Clear app store so next user starts fresh
+        useAppStore.getState().resetStore()
+        useAppStore.persist.setOptions({ name: 'ai-office-store-guest' })
+        set({ currentUser: null, error: null })
+      },
 
       register: (username, password, displayName) => {
         if (runtimeUsers.find(u => u.username === username)) {
@@ -74,6 +87,7 @@ export const useAuthStore = create<AuthState>()(
           },
           error: null,
         })
+        switchUserStore(username)
         return true
       },
 

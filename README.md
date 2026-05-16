@@ -1,71 +1,66 @@
 # AI Office
 
-**AI-powered Requirements Pipeline Tool for Agile Teams**
+> AI-powered Requirements Pipeline Tool for Agile Teams
 
-[![Next.js](https://img.shields.io/badge/Next.js-14-black?logo=next.js)](https://nextjs.org/)
-[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)](https://react.dev/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript)](https://www.typescriptlang.org/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS-06B6D4?logo=tailwindcss)](https://tailwindcss.com/)
-[![Vercel](https://img.shields.io/badge/Deployed-Vercel-000?logo=vercel)](https://vercel.com/)
+![Next.js](https://img.shields.io/badge/Next.js-14-black?logo=next.js)
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS-38B2AC?logo=tailwindcss)
+![Vercel](https://img.shields.io/badge/Deployed-Vercel-000?logo=vercel)
 
 ## What is this?
 
-AI Office is a next-generation requirements management tool that brings AI agents directly into your Agile workflow. Product Managers, Business Analysts, and Agile teams can describe features in plain language and have AI agents automatically convert them into structured, testable requirements in either Given-When-Then (GWT) or Classic specification format.
+AI Office is a requirements pipeline tool that uses multi-agent AI to automate
+the analysis and structuring of software requirements. Product Managers and BA
+analysts paste raw requirement text — AI agents instantly convert it into
+structured GWT or Classic format tickets, ready for sprint planning.
 
-The tool integrates a full BA revision loop: after initial analysis, dedicated QA and Dev agents review the requirement for testability and feasibility. If issues are found, a BA revision agent automatically rewrites the spec based on the feedback — reducing back-and-forth between humans and ensuring requirements are production-ready before a single line of code is written.
-
-Beyond the pipeline, AI Office provides a full Kanban board with automatic QA test case generation, sprint planning, story point estimation, and a pixel-art office visualization of your AI agents at work — making it a complete lightweight Agile workspace powered by Claude.
+The tool is built for Agile teams who want to spend less time writing
+requirements and more time building. QA agents auto-generate test cases,
+Dev agents estimate story points, and all agents are visualized as
+pixel art characters in the Pixel Office view.
 
 ## Features
 
-🔄 **Requirements Pipeline** — BA agents convert raw text into structured GWT or Classic specs  
-🔁 **BA Revision Loop** — QA and Dev agents flag issues; BA agent revises automatically  
-📋 **Kanban Board** — Drag-and-drop board with four columns: To Do, In Progress, Review, Done  
-🏃 **Sprint Management** — Backlog view, sprint planning, story point tracking  
-🎮 **Pixel Office** — Animated AI agents visualized as pixel art characters in a virtual office  
-🔬 **QA Test Cases** — Auto-generated on drag to In Progress, exportable as XLSX  
-🔐 **Authentication** — Multi-user login and registration with per-user data isolation  
-✍️  **Manual Ticket Creation** — Create tickets directly from the backlog without the Pipeline  
+| Feature | Description |
+|---------|-------------|
+| 🔄 Requirements Pipeline | BA agents convert raw text to GWT/Classic specs |
+| 🔁 BA Revision Loop | QA/Dev flag issues, BA revises automatically |
+| 📋 Kanban Board | Drag-and-drop with auto QA test case generation |
+| 🏃 Sprint Management | Backlog, sprint planning, story points |
+| 🎮 Pixel Office | Animated AI agents visualized as pixel art characters |
+| 🔬 QA Test Cases | Auto-generated on drag to In Progress, XLSX export |
+| 🔐 Authentication | Multi-user login/register with account isolation |
+| ✍️ Manual Ticket Creation | Create tickets directly without Pipeline |
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| Framework | Next.js 14, React 19, TypeScript |
-| State | Zustand with persist middleware |
-| Drag & Drop | @dnd-kit/core, @dnd-kit/sortable |
-| Styling | Tailwind CSS |
-| AI | Anthropic Claude API (`claude-haiku-4-5-20251001`) |
-| Export | SheetJS (XLSX) |
-| Deploy | Vercel |
+- **Frontend:** Next.js 14, React 19, TypeScript, Tailwind CSS
+- **State:** Zustand with localStorage persistence
+- **Drag & Drop:** @dnd-kit/core, @dnd-kit/sortable
+- **AI:** Anthropic Claude API (`claude-haiku-4-5-20251001`)
+- **Export:** SheetJS (XLSX)
+- **Deploy:** Vercel
 
 ## Getting Started
 
 ```bash
-# 1. Clone the repository
 git clone https://github.com/MikitaZhyhadla/ai-office
-
-# 2. Install dependencies
-cd ai-office && npm install
-
-# 3. Configure environment
-cp .env.example .env.local
-# Open .env.local and add your ANTHROPIC_API_KEY
-
-# 4. Start the dev server
+cd ai-office
+npm install
+cp .env.example .env.local   # add your ANTHROPIC_API_KEY
 npm run dev
-
-# 5. Open in browser
-# http://localhost:3000 — login with admin / demo1234
 ```
+
+Open [http://localhost:3000](http://localhost:3000)
 
 ## Test Credentials
 
-| Username | Password | Role      |
-|----------|----------|-----------|
-| admin    | demo1234 | Admin     |
-| qa_lead  | test5678 | QA        |
-| dev_lead | dev9999  | Developer |
+| Username | Password | Role |
+|----------|----------|------|
+| admin | demo1234 | Admin |
+| qa_lead | test5678 | QA |
+| dev_lead | dev9999 | Developer |
 
 ## Roadmap
 
