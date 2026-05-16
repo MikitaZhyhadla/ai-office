@@ -4,8 +4,10 @@ import { useState } from "react"
 import { Topbar } from "@/components/shared/Topbar"
 import { KanbanColumn } from "@/components/kanban/KanbanColumn"
 import { KanbanCard } from "@/components/kanban/KanbanCard"
+import { DoDChecklistModal } from "@/components/shared/DoDChecklistModal"
 import { useAppStore } from "@/store/useAppStore"
 import { useAuthStore } from "@/store/useAuthStore"
+import { useSettingsStore } from "@/store/useSettingsStore"
 import { qaTestCaseAgent } from "@/agents/qaTestCaseAgent"
 import type { KanbanColumn as ColType, Ticket } from "@/types"
 
@@ -17,6 +19,8 @@ export default function KanbanPage() {
   const currentUser = useAuthStore(s => s.currentUser)
   const sprint = sprints[0]
   const [activeTicket, setActiveTicket] = useState<Ticket | null>(null)
+  const [dodModalOpen, setDodModalOpen] = useState(false)
+  const [pendingDoneTicket, setPendingDoneTicket] = useState<Ticket | null>(null)
 
   const allTickets = Object.values(kanban).flat()
   const myKanban = {
@@ -79,6 +83,12 @@ export default function KanbanPage() {
       : COLUMNS.find(col => kanban[col].some(t => t.id === overId))
 
     if (targetCol && targetCol !== ticket.status) {
+      if (targetCol === 'done') {
+        setPendingDoneTicket(ticket)
+        setDodModalOpen(true)
+        return
+      }
+
       moveToKanban(ticket, targetCol)
 
       if (targetCol === 'inprog') {
@@ -86,6 +96,28 @@ export default function KanbanPage() {
         triggerQATestCases(updatedTicket)
       }
     }
+  }
+
+  function handleDodConfirm(checkedItemIds: string[]) {
+    if (!pendingDoneTicket) return
+    const dodItems = useSettingsStore.getState().dodItems
+    const checkedLabels = dodItems
+      .filter(item => checkedItemIds.includes(item.id))
+      .map(item => item.label)
+    moveToKanban(pendingDoneTicket, 'done')
+    appendTicketHistory(pendingDoneTicket.id, {
+      timestamp: new Date().toISOString(),
+      actor: "Human",
+      actorRole: "human",
+      message: `Definition of Done completed — checked: ${checkedLabels.join(', ')}`,
+    })
+    setDodModalOpen(false)
+    setPendingDoneTicket(null)
+  }
+
+  function handleDodCancel() {
+    setDodModalOpen(false)
+    setPendingDoneTicket(null)
   }
 
   const sprintTicketIds = new Set(sprint.ticketIds)
@@ -120,6 +152,17 @@ export default function KanbanPage() {
           </DragOverlay>
         </DndContext>
       </main>
+
+      {dodModalOpen && pendingDoneTicket && (
+        <DoDChecklistModal
+          isOpen={dodModalOpen}
+          ticketId={pendingDoneTicket.id}
+          ticketTitle={pendingDoneTicket.title}
+          ticketPoints={pendingDoneTicket.points}
+          onConfirm={handleDodConfirm}
+          onCancel={handleDodCancel}
+        />
+      )}
     </div>
   )
 }
