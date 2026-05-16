@@ -8,6 +8,7 @@ const tabs = [
   { label: "Pixel Office", href: "/office" },
   { label: "Backlog",      href: "/backlog" },
   { label: "Kanban",       href: "/kanban" },
+  { label: "Settings",     href: "/settings" },
 ]
 
 export function Topbar() {

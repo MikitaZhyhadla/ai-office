@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
+
+const DEFAULT_MODEL = "claude-haiku-4-5-20251001"
+
 export async function POST(req: NextRequest) {
-  const { system, messages } = await req.json()
+  const { system, messages, model } = await req.json()
   if (!process.env.ANTHROPIC_API_KEY) {
     return NextResponse.json({ error: "API key not configured" }, { status: 500 })
   }
@@ -13,7 +16,7 @@ export async function POST(req: NextRequest) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "claude-haiku-4-5-20251001",
+        model: model || DEFAULT_MODEL,
         max_tokens: 1000,
         system,
         messages,
