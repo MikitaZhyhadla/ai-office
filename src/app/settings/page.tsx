@@ -172,19 +172,61 @@ function ModelSection() {
 }
 
 // ─── Webhooks Section ────────────────────────────────────────────────────────
-type ConnStatus = 'idle' | 'ok' | 'fail'
+type ConnStatus = 'idle' | 'testing' | 'ok' | 'fail'
 
 function WebhooksSection() {
   const { jira, azure, updateJira, updateAzure } = useSettingsStore()
-  const [jiraStatus, setJiraStatus]   = useState<ConnStatus>('idle')
-  const [azureStatus, setAzureStatus] = useState<ConnStatus>('idle')
+  const [jiraStatus,   setJiraStatus]   = useState<ConnStatus>('idle')
+  const [azureStatus,  setAzureStatus]  = useState<ConnStatus>('idle')
+  const [jiraMessage,  setJiraMessage]  = useState<string>('')
+  const [azureMessage, setAzureMessage] = useState<string>('')
 
-  function testJira()  { setJiraStatus('ok') }
-  function testAzure() { setAzureStatus('ok') }
+  async function testJira() {
+    setJiraStatus('testing')
+    setJiraMessage('')
+    try {
+      const res = await fetch('/api/test-connection', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          provider: 'jira',
+          credentials: { baseUrl: jira.baseUrl, apiToken: jira.apiToken, userEmail: jira.userEmail },
+        }),
+      })
+      const data = await res.json()
+      setJiraStatus(data.success ? 'ok' : 'fail')
+      setJiraMessage(data.message ?? '')
+    } catch (err) {
+      setJiraStatus('fail')
+      setJiraMessage(String(err))
+    }
+  }
+
+  async function testAzure() {
+    setAzureStatus('testing')
+    setAzureMessage('')
+    try {
+      const res = await fetch('/api/test-connection', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          provider: 'azure',
+          credentials: { orgUrl: azure.orgUrl, patToken: azure.patToken },
+        }),
+      })
+      const data = await res.json()
+      setAzureStatus(data.success ? 'ok' : 'fail')
+      setAzureMessage(data.message ?? '')
+    } catch (err) {
+      setAzureStatus('fail')
+      setAzureMessage(String(err))
+    }
+  }
 
   const statusIcon = (s: ConnStatus) =>
-    s === 'ok'   ? <span style={{ color: '#22c55e', fontWeight: 700 }}>✓</span> :
-    s === 'fail'  ? <span style={{ color: '#ef4444', fontWeight: 700 }}>✗</span> : null
+    s === 'ok'      ? <span style={{ color: '#22c55e', fontWeight: 700 }}>✓</span> :
+    s === 'fail'    ? <span style={{ color: '#ef4444', fontWeight: 700 }}>✗</span> :
+    s === 'testing' ? <span style={{ color: '#888' }}>…</span> : null
 
   const toggleStyle: React.CSSProperties = {
     display: 'inline-flex', alignItems: 'center', cursor: 'pointer', gap: 8,
@@ -247,10 +289,17 @@ function WebhooksSection() {
             </div>
           ))}
         </div>
-        <button style={{ ...testBtnStyle, opacity: jira.enabled ? 1 : 0.4 }}
-          disabled={!jira.enabled} onClick={testJira}>
-          Test Connection
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 12 }}>
+          <button style={{ ...testBtnStyle, marginTop: 0, opacity: jira.enabled ? 1 : 0.4 }}
+            disabled={!jira.enabled || jiraStatus === 'testing'} onClick={testJira}>
+            {jiraStatus === 'testing' ? 'Testing…' : 'Test Connection'}
+          </button>
+          {jiraMessage && (
+            <span style={{ fontSize: 12, color: jiraStatus === 'ok' ? '#22c55e' : '#ef4444', fontWeight: 500 }}>
+              {jiraStatus === 'ok' ? '✓ ' : '✗ '}{jiraMessage}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Azure */}
@@ -279,10 +328,17 @@ function WebhooksSection() {
             </div>
           ))}
         </div>
-        <button style={{ ...testBtnStyle, opacity: azure.enabled ? 1 : 0.4 }}
-          disabled={!azure.enabled} onClick={testAzure}>
-          Test Connection
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 12 }}>
+          <button style={{ ...testBtnStyle, marginTop: 0, opacity: azure.enabled ? 1 : 0.4 }}
+            disabled={!azure.enabled || azureStatus === 'testing'} onClick={testAzure}>
+            {azureStatus === 'testing' ? 'Testing…' : 'Test Connection'}
+          </button>
+          {azureMessage && (
+            <span style={{ fontSize: 12, color: azureStatus === 'ok' ? '#22c55e' : '#ef4444', fontWeight: 500 }}>
+              {azureStatus === 'ok' ? '✓ ' : '✗ '}{azureMessage}
+            </span>
+          )}
+        </div>
       </div>
     </div>
   )

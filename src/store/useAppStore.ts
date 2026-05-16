@@ -27,6 +27,7 @@ interface AppState {
   testCases: Record<string, TestCase[]>
   generatingTcFor: string[]
   addTicket: (t: Ticket) => void
+  updateTicket: (ticketId: string, patch: Partial<Ticket>) => void
   moveToKanban: (ticket: Ticket, col: KanbanColumn) => void
   moveTicket: (ticketId: string, status: KanbanColumn) => void
   removeTicket: (ticketId: string) => void
@@ -62,6 +63,13 @@ export const useAppStore = create<AppState>()(
         tickets: [...s.tickets, ticket],
         kanban: { ...s.kanban, todo: [...s.kanban.todo, ticket] },
       })),
+      updateTicket: (ticketId, patch) => set(s => {
+        const updatedTickets = s.tickets.map(t => t.id === ticketId ? { ...t, ...patch } : t)
+        const cols: KanbanColumn[] = ["todo","inprog","review","done"]
+        const next = { ...s.kanban }
+        cols.forEach(c => { next[c] = next[c].map(t => t.id === ticketId ? { ...t, ...patch } : t) })
+        return { tickets: updatedTickets, kanban: next }
+      }),
       moveToKanban: (ticket, col) => set(s => {
         const cols: KanbanColumn[] = ["todo","inprog","review","done"]
         const next = { ...s.kanban }

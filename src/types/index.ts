@@ -70,6 +70,9 @@ export interface Ticket {
   qaVerdict?: QAVerdict
   devVerdict?: DevVerdict
   history?: TicketHistoryEntry[]
+  pushedTo?: 'jira' | 'azure' | null
+  pushedAt?: string
+  pushedUrl?: string
 }
 export interface Agent {
   id: string
