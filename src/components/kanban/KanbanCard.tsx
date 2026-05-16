@@ -1,46 +1,70 @@
 "use client"
-import { useRef, useEffect } from "react"
 import { useSortable } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
 import { useAppStore } from "@/store/useAppStore"
 import type { Ticket } from "@/types"
 
 export function KanbanCard({ ticket }: { ticket: Ticket }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: ticket.id })
   const setSelectedTicket = useAppStore(s => s.setSelectedTicket)
   const generatingTcFor   = useAppStore(s => s.generatingTcFor)
   const testCases         = useAppStore(s => s.testCases)
   const isGenerating      = generatingTcFor.includes(ticket.id)
   const hasCases          = (testCases[ticket.id]?.length ?? 0) > 0
-  const style = { transform: CSS.Transform.toString(transform), transition }
+
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: ticket.id })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    background: "#fff",
+    border: "1px solid #e8e8f0",
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 7,
+    opacity: isDragging ? 0.5 : 1,
+  }
+
   const priorityColor = ticket.priority === "high" ? "#E24B4A" : ticket.priority === "medium" ? "#EF9F27" : "#639922"
-  const priorityBg = ticket.priority === "high" ? "#FCEBEB" : ticket.priority === "medium" ? "#FAEEDA" : "#EAF3DE"
+  const priorityBg    = ticket.priority === "high" ? "#FCEBEB" : ticket.priority === "medium" ? "#FAEEDA" : "#EAF3DE"
 
-  // Track whether a drag occurred during the current pointer interaction
-  const didDragRef = useRef(false)
-  useEffect(() => {
-    if (isDragging) didDragRef.current = true
-  }, [isDragging])
-
-  // Intercept onPointerDown from listeners to reset the drag flag
-  const enhancedListeners = {
-    ...listeners,
-    onPointerDown: (e: React.PointerEvent<HTMLDivElement>) => {
-      didDragRef.current = false
-      ;(listeners as Record<string, (e: React.PointerEvent<HTMLDivElement>) => void>).onPointerDown?.(e)
-    },
+  const handleClick = (e: React.MouseEvent) => {
+    if (isDragging) return
+    e.stopPropagation()
+    setSelectedTicket(ticket.id)
   }
 
   return (
-    <div ref={setNodeRef}
-         style={{ ...style, background:"#fff", border:"1px solid #e8e8f0",
-                  borderRadius:8, padding:10, marginBottom:7,
-                  cursor: isDragging ? "grabbing" : "grab",
-                  opacity: isDragging ? 0.5 : 1 }}
-         {...attributes}
-         {...enhancedListeners}
-         onClick={() => { if (!didDragRef.current) setSelectedTicket(ticket.id) }}
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      onClick={handleClick}
     >
+      {/* DRAG HANDLE — only this element triggers drag */}
+      <div
+        {...listeners}
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          cursor: isDragging ? "grabbing" : "grab",
+          float: "right",
+          padding: "2px 5px",
+          color: "#ccc",
+          fontSize: 13,
+          userSelect: "none",
+          lineHeight: 1,
+        }}
+        title="Drag to move"
+      >
+        ⠿
+      </div>
+
       <div style={{ fontSize:12, fontWeight:500, marginBottom:7, lineHeight:1.4 }}>{ticket.title}</div>
       <div style={{ display:"flex", gap:5, marginBottom:5 }}>
         <span style={{ fontSize:10, fontWeight:500, padding:"2px 7px", borderRadius:20,
