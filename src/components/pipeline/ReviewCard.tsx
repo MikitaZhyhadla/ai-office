@@ -9,9 +9,10 @@ interface Props {
   devVerdict: DevVerdict | null
   onApprove: () => void
   onRequestChanges: () => void
+  revisionCount?: number
 }
 
-export function ReviewCard({ data, qaVerdict, devVerdict, onApprove, onRequestChanges }: Props) {
+export function ReviewCard({ data, qaVerdict, devVerdict, onApprove, onRequestChanges, revisionCount }: Props) {
   const priorityColor = data.priority === "high" ? "#791F1F" : data.priority === "medium" ? "#633806" : "#27500A"
   const priorityBg = data.priority === "high" ? "#FCEBEB" : data.priority === "medium" ? "#FAEEDA" : "#EAF3DE"
 
@@ -31,6 +32,11 @@ export function ReviewCard({ data, qaVerdict, devVerdict, onApprove, onRequestCh
         <span style={{ fontSize:10, fontWeight:500, padding:"3px 9px", borderRadius:20, background:"#EEEDFE", color:"#3C3489" }}>
           {data.format.toUpperCase()}
         </span>
+        {revisionCount != null && revisionCount > 0 && (
+          <span style={{ fontSize:10, fontWeight:700, padding:"3px 9px", borderRadius:20, background:"#FFF3DC", color:"#854F0B", border:"1px solid #e8c97a" }}>
+            Revision #{revisionCount}
+          </span>
+        )}
       </div>
 
       {data.format === "gwt" && (data as GWTRequirement).scenarios.map((sc, i) => (
