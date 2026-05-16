@@ -1,6 +1,8 @@
 "use client"
 import { useState, useEffect, useCallback } from "react"
 import { useAppStore } from "@/store/useAppStore"
+import { useSettingsStore } from "@/store/useSettingsStore"
+import { pushTicketToJira, pushTicketToAzure } from "@/lib/pushTicket"
 import { TestCasePanel } from "./TestCasePanel"
 import type { GWTRequirement, ClassicRequirement, KanbanColumn, TicketHistoryEntry } from "@/types"
 
@@ -42,11 +44,22 @@ export function TicketModal({ ticketId, onClose }: TicketModalProps) {
   const sprints   = useAppStore(s => s.sprints)
   const moveTicket           = useAppStore(s => s.moveTicket)
   const removeTicket         = useAppStore(s => s.removeTicket)
+  const updateTicket         = useAppStore(s => s.updateTicket)
   const appendTicketHistory  = useAppStore(s => s.appendTicketHistory)
   const testCases = useAppStore(s => s.testCases)
   const tcCount   = testCases[ticketId]?.length ?? 0
 
+  const jira  = useSettingsStore(s => s.jira)
+  const azure = useSettingsStore(s => s.azure)
+
+  const isJiraConfigured  = jira.enabled  && !!jira.baseUrl  && !!jira.projectKey && !!jira.apiToken  && !!jira.userEmail
+  const isAzureConfigured = azure.enabled && !!azure.orgUrl  && !!azure.project   && !!azure.patToken
+
   const [activeTab, setActiveTab] = useState<Tab>("requirements")
+  const [jiraPushState,  setJiraPushState]  = useState<"idle" | "loading" | "error">("idle")
+  const [azurePushState, setAzurePushState] = useState<"idle" | "loading" | "error">("idle")
+  const [jiraError,  setJiraError]  = useState<string | null>(null)
+  const [azureError, setAzureError] = useState<string | null>(null)
 
   const handleKey = useCallback((e: KeyboardEvent) => {
     if (e.key === "Escape") onClose()
@@ -64,6 +77,46 @@ export function TicketModal({ ticketId, onClose }: TicketModalProps) {
   const { color: stColor, bg: stBg } = STATUS_COLOR[ticket.status]
   const prioColor = ticket.priority === "high" ? "#791F1F" : ticket.priority === "medium" ? "#854F0B" : "#27500A"
   const prioBg    = ticket.priority === "high" ? "#FEF2F2" : ticket.priority === "medium" ? "#FAEEDA" : "#EAF3DE"
+
+  const handlePushJira = async () => {
+    if (!ticket) return
+    setJiraPushState("loading")
+    setJiraError(null)
+    try {
+      const { issueUrl, issueKey } = await pushTicketToJira(ticket)
+      updateTicket(ticket.id, { pushedTo: "jira", pushedAt: new Date().toISOString(), pushedUrl: issueUrl })
+      appendTicketHistory(ticket.id, {
+        timestamp: new Date().toISOString(),
+        actor: "Human",
+        actorRole: "human",
+        message: `Pushed to Jira — ${issueKey}`,
+      })
+      setJiraPushState("idle")
+    } catch (err) {
+      setJiraError(String(err).replace(/^Error:\s*/, ""))
+      setJiraPushState("error")
+    }
+  }
+
+  const handlePushAzure = async () => {
+    if (!ticket) return
+    setAzurePushState("loading")
+    setAzureError(null)
+    try {
+      const { issueUrl, issueKey } = await pushTicketToAzure(ticket)
+      updateTicket(ticket.id, { pushedTo: "azure", pushedAt: new Date().toISOString(), pushedUrl: issueUrl })
+      appendTicketHistory(ticket.id, {
+        timestamp: new Date().toISOString(),
+        actor: "Human",
+        actorRole: "human",
+        message: `Pushed to Azure DevOps — #${issueKey}`,
+      })
+      setAzurePushState("idle")
+    } catch (err) {
+      setAzureError(String(err).replace(/^Error:\s*/, ""))
+      setAzurePushState("error")
+    }
+  }
 
   const handleMove = () => {
     if (!nextSt) return
@@ -366,25 +419,134 @@ export function TicketModal({ ticketId, onClose }: TicketModalProps) {
         </div>
 
         {/* ── Footer ── */}
-        <div style={{ display:"flex", gap:8, padding:"14px 22px", borderTop:"1px solid #e8e8f0",
-                      flexWrap:"wrap", flexShrink:0 }}>
-          {nextSt && (
-            <button onClick={handleMove}
-              style={{ background:"#534AB7", color:"#fff", border:"none", borderRadius:8,
-                       padding:"8px 16px", fontSize:12, fontWeight:500, cursor:"pointer" }}>
-              → Move to {STATUS_LABEL[nextSt]}
-            </button>
+        <div style={{ display:"flex", flexDirection:"column", gap:0, borderTop:"1px solid #e8e8f0", flexShrink:0 }}>
+          {/* Push result cards */}
+          {(ticket.pushedTo === "jira" && ticket.pushedUrl) && (
+            <div style={{ display:"flex", alignItems:"center", gap:10, padding:"8px 22px",
+                          background:"#f0fff8", borderBottom:"1px solid #b3e8d0", fontSize:12 }}>
+              <span style={{ color:"#0F6E56", fontWeight:700 }}>✓ Pushed to Jira</span>
+              <a href={ticket.pushedUrl} target="_blank" rel="noreferrer"
+                style={{ color:"#0F6E56", fontWeight:500, textDecoration:"underline" }}>
+                Open in Jira ↗
+              </a>
+              <span style={{ color:"#888", marginLeft:"auto", fontSize:10 }}>
+                {ticket.pushedAt ? new Date(ticket.pushedAt).toLocaleString() : ""}
+              </span>
+            </div>
           )}
-          <button onClick={handleCopyJSON}
-            style={{ background:"none", border:"1.5px solid #ddd", color:"#555", borderRadius:8,
-                     padding:"8px 14px", fontSize:12, cursor:"pointer" }}>
-            ⎘ Copy JSON
-          </button>
-          <button onClick={handleDelete}
-            style={{ background:"none", border:"1.5px solid #f5b8b8", color:"#791F1F", borderRadius:8,
-                     padding:"8px 14px", fontSize:12, cursor:"pointer", marginLeft:"auto" }}>
-            🗑 Delete
-          </button>
+          {(ticket.pushedTo === "azure" && ticket.pushedUrl) && (
+            <div style={{ display:"flex", alignItems:"center", gap:10, padding:"8px 22px",
+                          background:"#f0f4ff", borderBottom:"1px solid #b3c8f0", fontSize:12 }}>
+              <span style={{ color:"#1a3fa8", fontWeight:700 }}>✓ Pushed to Azure DevOps</span>
+              <a href={ticket.pushedUrl} target="_blank" rel="noreferrer"
+                style={{ color:"#1a3fa8", fontWeight:500, textDecoration:"underline" }}>
+                Open in Azure ↗
+              </a>
+              <span style={{ color:"#888", marginLeft:"auto", fontSize:10 }}>
+                {ticket.pushedAt ? new Date(ticket.pushedAt).toLocaleString() : ""}
+              </span>
+            </div>
+          )}
+          {jiraError && (
+            <div style={{ padding:"6px 22px", background:"#fff5f5", borderBottom:"1px solid #f5b8b8",
+                          fontSize:11, color:"#791F1F" }}>
+              Jira: {jiraError}
+            </div>
+          )}
+          {azureError && (
+            <div style={{ padding:"6px 22px", background:"#fff5f5", borderBottom:"1px solid #f5b8b8",
+                          fontSize:11, color:"#791F1F" }}>
+              Azure: {azureError}
+            </div>
+          )}
+
+          {/* Action row */}
+          <div style={{ display:"flex", gap:8, padding:"14px 22px", flexWrap:"wrap" }}>
+            {nextSt && (
+              <button onClick={handleMove}
+                style={{ background:"#534AB7", color:"#fff", border:"none", borderRadius:8,
+                         padding:"8px 16px", fontSize:12, fontWeight:500, cursor:"pointer" }}>
+                → Move to {STATUS_LABEL[nextSt]}
+              </button>
+            )}
+            <button onClick={handleCopyJSON}
+              style={{ background:"none", border:"1.5px solid #ddd", color:"#555", borderRadius:8,
+                       padding:"8px 14px", fontSize:12, cursor:"pointer" }}>
+              ⎘ Copy JSON
+            </button>
+
+            {/* Jira push button */}
+            {ticket.pushedTo === "jira" ? (
+              <button disabled
+                style={{ background:"#0F6E56", color:"#fff", border:"none", borderRadius:8,
+                         padding:"8px 14px", fontSize:12, cursor:"not-allowed", opacity:0.85 }}>
+                ✓ Pushed to Jira
+              </button>
+            ) : !isJiraConfigured ? (
+              <button disabled title="Configure Jira in Settings"
+                style={{ background:"none", border:"1.5px solid #ccc", color:"#aaa", borderRadius:8,
+                         padding:"8px 14px", fontSize:12, cursor:"not-allowed" }}>
+                [J] Push to Jira
+              </button>
+            ) : jiraPushState === "loading" ? (
+              <button disabled
+                style={{ background:"none", border:"1.5px solid #0F6E56", color:"#0F6E56", borderRadius:8,
+                         padding:"8px 14px", fontSize:12, cursor:"not-allowed", opacity:0.6 }}>
+                Pushing…
+              </button>
+            ) : jiraPushState === "error" ? (
+              <button onClick={handlePushJira}
+                style={{ background:"none", border:"1.5px solid #791F1F", color:"#791F1F", borderRadius:8,
+                         padding:"8px 14px", fontSize:12, cursor:"pointer" }}>
+                ✗ Failed — Retry Jira
+              </button>
+            ) : (
+              <button onClick={handlePushJira}
+                style={{ background:"none", border:"1.5px solid #0F6E56", color:"#0F6E56", borderRadius:8,
+                         padding:"8px 14px", fontSize:12, cursor:"pointer", fontWeight:500 }}>
+                [J] Push to Jira
+              </button>
+            )}
+
+            {/* Azure push button */}
+            {ticket.pushedTo === "azure" ? (
+              <button disabled
+                style={{ background:"#1a3fa8", color:"#fff", border:"none", borderRadius:8,
+                         padding:"8px 14px", fontSize:12, cursor:"not-allowed", opacity:0.85 }}>
+                ✓ Pushed to Azure
+              </button>
+            ) : !isAzureConfigured ? (
+              <button disabled title="Configure Azure DevOps in Settings"
+                style={{ background:"none", border:"1.5px solid #ccc", color:"#aaa", borderRadius:8,
+                         padding:"8px 14px", fontSize:12, cursor:"not-allowed" }}>
+                [A] Push to Azure
+              </button>
+            ) : azurePushState === "loading" ? (
+              <button disabled
+                style={{ background:"none", border:"1.5px solid #1a3fa8", color:"#1a3fa8", borderRadius:8,
+                         padding:"8px 14px", fontSize:12, cursor:"not-allowed", opacity:0.6 }}>
+                Pushing…
+              </button>
+            ) : azurePushState === "error" ? (
+              <button onClick={handlePushAzure}
+                style={{ background:"none", border:"1.5px solid #791F1F", color:"#791F1F", borderRadius:8,
+                         padding:"8px 14px", fontSize:12, cursor:"pointer" }}>
+                ✗ Failed — Retry Azure
+              </button>
+            ) : (
+              <button onClick={handlePushAzure}
+                style={{ background:"none", border:"1.5px solid #1a3fa8", color:"#1a3fa8", borderRadius:8,
+                         padding:"8px 14px", fontSize:12, cursor:"pointer", fontWeight:500 }}>
+                [A] Push to Azure
+              </button>
+            )}
+
+            <button onClick={handleDelete}
+              style={{ background:"none", border:"1.5px solid #f5b8b8", color:"#791F1F", borderRadius:8,
+                       padding:"8px 14px", fontSize:12, cursor:"pointer", marginLeft:"auto" }}>
+              🗑 Delete
+            </button>
+          </div>
         </div>
       </div>
     </div>
