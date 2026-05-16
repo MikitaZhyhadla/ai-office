@@ -1,15 +1,23 @@
 "use client"
+import { useState } from "react"
 import { useAppStore } from "@/store/useAppStore"
 import { Topbar } from "@/components/shared/Topbar"
 import { SprintPanel } from "@/components/backlog/SprintPanel"
 import { TicketRow } from "@/components/backlog/TicketRow"
 import { ExportButton } from "@/components/shared/ExportButton"
+import { CreateTicketModal } from "@/components/backlog/CreateTicketModal"
+import type { Ticket } from "@/types"
 
 export default function BacklogPage() {
-  const { tickets, sprints } = useAppStore()
+  const { tickets, sprints, addTicket } = useAppStore()
+  const [showCreateModal, setShowCreateModal] = useState(false)
   const sprint = sprints[0]
   const sprintTickets = tickets.filter(t => sprint.ticketIds.includes(t.id))
   const backlogTickets = tickets.filter(t => !sprint.ticketIds.includes(t.id))
+
+  function handleCreateTicket(ticket: Ticket) {
+    addTicket(ticket)
+  }
 
   return (
     <div style={{ background:"#f0eff7", minHeight:"100vh" }}>
@@ -20,8 +28,27 @@ export default function BacklogPage() {
           <span style={{ fontSize:10, fontWeight:500, padding:"3px 9px", borderRadius:20, background:"#EEEDFE", color:"#3C3489" }}>
             {tickets.length} tickets
           </span>
-          <div style={{ marginLeft:"auto" }}>
+          <div style={{ marginLeft:"auto", display:"flex", gap:8, alignItems:"center" }}>
             <ExportButton />
+            <button
+              onClick={() => setShowCreateModal(true)}
+              style={{
+                background: "#534AB7",
+                color: "#fff",
+                border: "none",
+                borderRadius: 8,
+                padding: "8px 16px",
+                fontSize: 12,
+                fontWeight: 500,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                fontFamily: "inherit",
+              }}
+            >
+              ＋ Create Ticket
+            </button>
           </div>
         </div>
 
@@ -53,6 +80,12 @@ export default function BacklogPage() {
           ))}
         </div>
       </main>
+      {showCreateModal && (
+        <CreateTicketModal
+          onClose={() => setShowCreateModal(false)}
+          onSave={handleCreateTicket}
+        />
+      )}
     </div>
   )
 }
