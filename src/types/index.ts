@@ -1,6 +1,14 @@
 import type { QAVerdict } from "@/agents/qaAgent"
 import type { DevVerdict } from "@/agents/devAgent"
 
+export interface TestCase {
+  id:             string
+  title:          string
+  steps:          string[]
+  expectedResult: string
+  type:           'positive' | 'negative' | 'boundary'
+}
+
 export type Format = 'gwt' | 'classic'
 export type Priority = 'high' | 'medium' | 'low'
 export type AgentStatus = 'idle' | 'thinking' | 'working'

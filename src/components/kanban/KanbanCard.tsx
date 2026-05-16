@@ -8,6 +8,10 @@ import type { Ticket } from "@/types"
 export function KanbanCard({ ticket }: { ticket: Ticket }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: ticket.id })
   const setSelectedTicket = useAppStore(s => s.setSelectedTicket)
+  const generatingTcFor   = useAppStore(s => s.generatingTcFor)
+  const testCases         = useAppStore(s => s.testCases)
+  const isGenerating      = generatingTcFor.includes(ticket.id)
+  const hasCases          = (testCases[ticket.id]?.length ?? 0) > 0
   const style = { transform: CSS.Transform.toString(transform), transition }
   const priorityColor = ticket.priority === "high" ? "#E24B4A" : ticket.priority === "medium" ? "#EF9F27" : "#639922"
   const priorityBg = ticket.priority === "high" ? "#FCEBEB" : ticket.priority === "medium" ? "#FAEEDA" : "#EAF3DE"
@@ -56,6 +60,40 @@ export function KanbanCard({ ticket }: { ticket: Ticket }) {
           {ticket.priority}
         </span>
       </div>
+
+      {isGenerating && (
+        <div style={{
+          marginTop: 6,
+          padding: '3px 8px',
+          background: '#E1F5EE',
+          border: '1px solid #5DCAA5',
+          borderRadius: 4,
+          fontSize: 10,
+          color: '#0F6E56',
+          fontWeight: 500,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 4,
+        }}>
+          <span style={{ animation: 'spin 1s linear infinite', display: 'inline-block' }}>⟳</span>
+          Generating test cases...
+        </div>
+      )}
+
+      {!isGenerating && hasCases && ticket.status !== 'todo' && (
+        <div style={{
+          marginTop: 6,
+          padding: '2px 8px',
+          background: '#E1F5EE',
+          border: '1px solid #0F6E56',
+          borderRadius: 4,
+          fontSize: 10,
+          color: '#0F6E56',
+          fontWeight: 600,
+        }}>
+          🔬 {testCases[ticket.id].length} test cases ready
+        </div>
+      )}
     </div>
   )
 }
