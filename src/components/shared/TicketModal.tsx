@@ -1,6 +1,7 @@
 "use client"
 import { useState, useEffect, useCallback } from "react"
 import { useAppStore } from "@/store/useAppStore"
+import { TestCasePanel } from "./TestCasePanel"
 import type { GWTRequirement, ClassicRequirement, KanbanColumn, TicketHistoryEntry } from "@/types"
 
 interface TicketModalProps {
@@ -8,7 +9,7 @@ interface TicketModalProps {
   onClose: () => void
 }
 
-type Tab = "requirements" | "verdicts" | "history"
+type Tab = "requirements" | "verdicts" | "testcases" | "history"
 
 const NEXT_STATUS: Record<KanbanColumn, KanbanColumn | null> = {
   todo: "inprog",
@@ -42,6 +43,8 @@ export function TicketModal({ ticketId, onClose }: TicketModalProps) {
   const moveTicket           = useAppStore(s => s.moveTicket)
   const removeTicket         = useAppStore(s => s.removeTicket)
   const appendTicketHistory  = useAppStore(s => s.appendTicketHistory)
+  const testCases = useAppStore(s => s.testCases)
+  const tcCount   = testCases[ticketId]?.length ?? 0
 
   const [activeTab, setActiveTab] = useState<Tab>("requirements")
 
@@ -142,14 +145,29 @@ export function TicketModal({ ticketId, onClose }: TicketModalProps) {
 
         {/* ── Tabs ── */}
         <div style={{ display:"flex", padding:"0 22px", borderBottom:"1px solid #e8e8f0", flexShrink:0 }}>
-          {(["requirements","verdicts","history"] as Tab[]).map(tab => (
+          {(["requirements","verdicts","testcases","history"] as Tab[]).map(tab => (
             <button key={tab} onClick={() => setActiveTab(tab)}
               style={{ background:"none", border:"none", cursor:"pointer", padding:"12px 14px",
                        fontSize:13, fontWeight:500, fontFamily:"inherit",
                        borderBottom: activeTab === tab ? "2px solid #534AB7" : "2px solid transparent",
                        color: activeTab === tab ? "#534AB7" : "#888",
-                       marginBottom:-1 }}>
-              {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                       marginBottom:-1, display:"flex", alignItems:"center", gap:4 }}>
+              {tab === "testcases" ? (
+                <>
+                  <span>Test Cases</span>
+                  {tcCount > 0 && (
+                    <span style={{
+                      background: '#E1F5EE', color: '#085041',
+                      fontSize: 9, padding: '1px 5px',
+                      borderRadius: 10, fontWeight: 600,
+                    }}>
+                      {tcCount}
+                    </span>
+                  )}
+                </>
+              ) : (
+                tab.charAt(0).toUpperCase() + tab.slice(1)
+              )}
             </button>
           ))}
         </div>
@@ -298,6 +316,11 @@ export function TicketModal({ ticketId, onClose }: TicketModalProps) {
                 </div>
               )}
             </div>
+          )}
+
+          {/* Test Cases tab */}
+          {activeTab === "testcases" && (
+            <TestCasePanel ticketId={ticketId} ticketTitle={ticket.title} />
           )}
 
           {/* History tab */}

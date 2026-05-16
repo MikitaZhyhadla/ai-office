@@ -5,16 +5,52 @@ import { Topbar } from "@/components/shared/Topbar"
 import { KanbanColumn } from "@/components/kanban/KanbanColumn"
 import { KanbanCard } from "@/components/kanban/KanbanCard"
 import { useAppStore } from "@/store/useAppStore"
+import { qaTestCaseAgent } from "@/agents/qaTestCaseAgent"
 import type { KanbanColumn as ColType, Ticket } from "@/types"
 
 const COLUMNS: ColType[] = ["todo", "inprog", "review", "done"]
 
 export default function KanbanPage() {
-  const { kanban, moveToKanban, sprints } = useAppStore()
+  const { kanban, moveToKanban, sprints, setTestCases, setGeneratingTc,
+          setAgentStatus, appendTicketHistory } = useAppStore()
   const sprint = sprints[0]
   const [activeTicket, setActiveTicket] = useState<Ticket | null>(null)
 
   const allTickets = Object.values(kanban).flat()
+
+  async function triggerQATestCases(ticket: Ticket) {
+    setAgentStatus('qa1', 'thinking', `Generating test cases for ${ticket.id}`)
+    setGeneratingTc(ticket.id, true)
+
+    try {
+      const cases = await qaTestCaseAgent(
+        ticket.id,
+        ticket.title,
+        ticket.data,
+        ticket.format
+      )
+
+      setTestCases(ticket.id, cases)
+      moveToKanban(ticket, 'review')
+      appendTicketHistory(ticket.id, {
+        actor:     'QA Lead',
+        actorRole: 'qa',
+        message:   `Generated ${cases.length} test cases (positive, negative, boundary) — ticket moved to In Review`,
+        timestamp: new Date().toISOString(),
+      })
+    } catch (err) {
+      console.error('QA test case generation failed:', err)
+      appendTicketHistory(ticket.id, {
+        actor:     'QA Lead',
+        actorRole: 'qa',
+        message:   'Test case generation failed — ticket remains In Progress',
+        timestamp: new Date().toISOString(),
+      })
+    } finally {
+      setGeneratingTc(ticket.id, false)
+      setAgentStatus('qa1', 'idle')
+    }
+  }
 
   function handleDragStart(event: DragStartEvent) {
     const ticket = allTickets.find(t => t.id === event.active.id)
@@ -36,6 +72,11 @@ export default function KanbanPage() {
 
     if (targetCol && targetCol !== ticket.status) {
       moveToKanban(ticket, targetCol)
+
+      if (targetCol === 'inprog') {
+        const updatedTicket = { ...ticket, status: 'inprog' as const }
+        triggerQATestCases(updatedTicket)
+      }
     }
   }
 

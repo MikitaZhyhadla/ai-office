@@ -1,7 +1,7 @@
 "use client"
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
-import type { Ticket, Agent, Sprint, LogEntry, KanbanColumn, TicketHistoryEntry } from "@/types"
+import type { Ticket, Agent, Sprint, LogEntry, KanbanColumn, TicketHistoryEntry, TestCase } from "@/types"
 
 interface AppState {
   tickets: Ticket[]
@@ -11,6 +11,8 @@ interface AppState {
   pipeline: { ba: number; review: number; qa: number; done: number }
   kanban: { todo: Ticket[]; inprog: Ticket[]; review: Ticket[]; done: Ticket[] }
   selectedTicketId: string | null
+  testCases: Record<string, TestCase[]>
+  generatingTcFor: string[]
   addTicket: (t: Ticket) => void
   moveToKanban: (ticket: Ticket, col: KanbanColumn) => void
   moveTicket: (ticketId: string, status: KanbanColumn) => void
@@ -21,12 +23,16 @@ interface AppState {
   incPipeline: (stage: keyof AppState["pipeline"], delta: number) => void
   setSelectedTicket: (id: string | null) => void
   appendTicketHistory: (ticketId: string, entry: Omit<TicketHistoryEntry, "id">) => void
+  setTestCases: (ticketId: string, cases: TestCase[]) => void
+  setGeneratingTc: (ticketId: string, loading: boolean) => void
 }
 
 export const useAppStore = create<AppState>()(
   persist(
     (set) => ({
       tickets: [],
+      testCases: {},
+      generatingTcFor: [],
       sprints: [{ id: "sprint-3", name: "Sprint 3", startDate: "2026-05-12", endDate: "2026-05-25", ticketIds: [] }],
       agents: [
         { id: "alice", name: "Alice BA", role: "ba", status: "idle" },
@@ -91,6 +97,14 @@ export const useAppStore = create<AppState>()(
         pipeline: { ...s.pipeline, [stage]: Math.max(0, s.pipeline[stage] + delta) }
       })),
       setSelectedTicket: (id) => set({ selectedTicketId: id }),
+      setTestCases: (ticketId, cases) =>
+        set(s => ({ testCases: { ...s.testCases, [ticketId]: cases } })),
+      setGeneratingTc: (ticketId, loading) =>
+        set(s => ({
+          generatingTcFor: loading
+            ? [...s.generatingTcFor, ticketId]
+            : s.generatingTcFor.filter(id => id !== ticketId)
+        })),
       appendTicketHistory: (ticketId, entry) => set(s => ({
         tickets: s.tickets.map(t =>
           t.id === ticketId
