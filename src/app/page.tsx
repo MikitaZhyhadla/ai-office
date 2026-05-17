@@ -14,10 +14,14 @@ import { baAgentRevise } from "@/agents/baAgentRevise"
 import { qaAgent } from "@/agents/qaAgent"
 import { devAgent } from "@/agents/devAgent"
 import { runBugAgent } from "@/agents/bugAgent"
+import { runTranslationAgent } from "@/agents/translationAgent"
+import { needsTranslation, detectLanguageName } from "@/lib/detectLanguage"
+import { TranslationBanner } from "@/components/pipeline/TranslationBanner"
 import { useAuthStore } from "@/store/useAuthStore"
 import type { Format, RequirementData, Ticket, TicketHistoryEntry, Severity } from "@/types"
 import type { QAVerdict } from "@/agents/qaAgent"
 import type { DevVerdict } from "@/agents/devAgent"
+import type { TranslationResult } from "@/agents/translationAgent"
 
 type PipelineMode = 'idle' | 'analyzing' | 'review' | 'qa_check' | 'revision' | 'done'
 type PipelineInputMode = 'feature' | 'bug'
@@ -34,6 +38,8 @@ export default function PipelinePage() {
   const [isRevising, setIsRevising] = useState(false)
   const [revisionCount, setRevisionCount] = useState(0)
 
+  const [translationResult, setTranslationResult] = useState<TranslationResult | null>(null)
+
   const [inputMode, setInputMode] = useState<PipelineInputMode>('feature')
   const [bugText, setBugText] = useState('')
   const [bugAffectedArea, setBugAffectedArea] = useState('')
@@ -47,11 +53,31 @@ export default function PipelinePage() {
     setRevisionCount(0)
     setMode('analyzing')
     setPendingFormat(format)
+    setTranslationResult(null)
+
+    // === TRANSLATION INTERCEPT — Phase 3.8 ===
+    let textToAnalyze = text
+    const { autoTranslate } = useSettingsStore.getState()
+
+    if (autoTranslate && needsTranslation(textToAnalyze)) {
+      const langName = detectLanguageName(textToAnalyze)
+      addLog({ agentName: "Translator", agentRole: "translator", message: `Detected ${langName} text — translating to English…` })
+      try {
+        const result = await runTranslationAgent(textToAnalyze, langName)
+        textToAnalyze = result.translated
+        setTranslationResult(result)
+        addLog({ agentName: "Translator", agentRole: "translator", message: `Translated from ${langName} to English successfully` })
+      } catch {
+        addLog({ agentName: "Translator", agentRole: "translator", message: `Translation failed — proceeding with original text` })
+      }
+    }
+    // === END TRANSLATION INTERCEPT ===
+
     try {
       if (format === "gwt") {
         setAgentStatus("alice", "thinking", "Analyzing requirement")
         addLog({ agentName: "Alice BA", agentRole: "ba", message: "Starting GWT analysis..." })
-        const result = await baAgentGWT(text)
+        const result = await baAgentGWT(textToAnalyze)
         setAgentStatus("alice", "idle")
         addLog({ agentName: "Alice BA", agentRole: "ba", message: `Generated ${result.scenarios.length} scenarios for "${result.title}"` })
         incPipeline("ba", 1)
@@ -59,7 +85,7 @@ export default function PipelinePage() {
       } else {
         setAgentStatus("bob", "thinking", "Analyzing requirement")
         addLog({ agentName: "Bob BA", agentRole: "ba", message: "Starting Classic spec analysis..." })
-        const result = await baAgentClassic(text)
+        const result = await baAgentClassic(textToAnalyze)
         setAgentStatus("bob", "idle")
         addLog({ agentName: "Bob BA", agentRole: "ba", message: `Generated Classic spec for "${result.title}"` })
         incPipeline("ba", 1)
@@ -284,7 +310,11 @@ export default function PipelinePage() {
         </div>
 
         {inputMode === 'feature' ? (
-          <RequirementInput onSubmit={handleSubmit} loading={loading} />
+          <RequirementInput
+            onSubmit={handleSubmit}
+            loading={loading}
+            onTextChange={() => setTranslationResult(null)}
+          />
         ) : (
           <div style={{
             background: "#fff",
@@ -396,6 +426,10 @@ export default function PipelinePage() {
               <span style={{ fontSize: 11, color: "#aaa" }}>● Agents ready</span>
             </div>
           </div>
+        )}
+
+        {translationResult && inputMode === 'feature' && (
+          <TranslationBanner result={translationResult} />
         )}
 
         {pendingReview && (
