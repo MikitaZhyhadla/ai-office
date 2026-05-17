@@ -1,6 +1,7 @@
 'use client'
 import { useRef, useState } from 'react'
 import { useSettingsStore, DodItem } from '@/store/useSettingsStore'
+import { Topbar } from '@/components/shared/Topbar'
 
 const MODELS = [
   { id: 'claude-haiku-4-5-20251001',   name: 'Claude Haiku 4.5',  desc: 'Fast & cheap · Default' },
@@ -513,6 +514,8 @@ export default function SettingsPage() {
   }
 
   return (
+    <>
+    <Topbar />
     <div style={{ display: 'flex', height: 'calc(100vh - 48px)', background: '#f5f5fa' }}>
       {/* Sidebar */}
       <aside style={{
@@ -557,5 +560,6 @@ export default function SettingsPage() {
         <AboutSection />
       </main>
     </div>
+    </>
   )
 }
