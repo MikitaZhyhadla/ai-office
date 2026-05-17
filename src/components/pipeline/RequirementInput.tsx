@@ -5,19 +5,24 @@ import type { Format } from "@/types"
 interface Props {
   onSubmit: (text: string, format: Format) => void
   loading: boolean
-  onTextChange?: () => void
+  onTextChange?: (text: string, format: Format) => void
+  initialText?: string
+  initialFormat?: Format
 }
 
-export function RequirementInput({ onSubmit, loading, onTextChange }: Props) {
-  const [text, setText] = useState("")
-  const [format, setFormat] = useState<Format>("gwt")
+export function RequirementInput({ onSubmit, loading, onTextChange, initialText, initialFormat }: Props) {
+  const [text, setText] = useState(initialText ?? "")
+  const [format, setFormat] = useState<Format>(initialFormat ?? "gwt")
   return (
     <div style={{ background:"#fff", border:"1px solid #e8e8f0", borderRadius:10, padding:16, marginBottom:16 }}>
       <div style={{ display:"flex", justifyContent:"space-between", marginBottom:12 }}>
         <span style={{ fontSize:13, fontWeight:500 }}>New requirement</span>
         <div style={{ display:"flex", background:"#f0eff7", borderRadius:6, padding:2 }}>
           {(["gwt","classic"] as Format[]).map(f => (
-            <button key={f} onClick={() => setFormat(f)}
+            <button key={f} onClick={() => {
+              setFormat(f)
+              onTextChange?.(text, f)
+            }}
               style={{ fontSize:11, padding:"5px 12px", borderRadius:5, border:"none", cursor:"pointer",
                        background: format===f ? "#fff" : "none",
                        color: format===f ? "#534AB7" : "#888",
@@ -28,7 +33,10 @@ export function RequirementInput({ onSubmit, loading, onTextChange }: Props) {
         </div>
       </div>
       <textarea
-        value={text} onChange={e => { setText(e.target.value); onTextChange?.() }}
+        value={text} onChange={e => {
+          setText(e.target.value)
+          onTextChange?.(e.target.value, format)
+        }}
         placeholder="Describe the feature or user story..."
         rows={4}
         style={{ width:"100%", background:"#f8f8fc", border:"1px solid #e8e8f0", borderRadius:8,

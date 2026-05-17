@@ -8,7 +8,6 @@ import { TestCasePanel } from "./TestCasePanel"
 import { BugReportView } from "./BugReportView"
 import { TechNotesPanel } from "./TechNotesPanel"
 import { MoSCoWBadge } from "./MoSCoWBadge"
-import { qaTestCaseAgentFromString } from "@/agents/qaTestCaseAgent"
 import type { GWTRequirement, ClassicRequirement, KanbanColumn, TicketHistoryEntry } from "@/types"
 
 interface TicketModalProps {
@@ -60,15 +59,12 @@ export function TicketModal({ ticketId, onClose }: TicketModalProps) {
   const isJiraConfigured  = jira.enabled  && !!jira.baseUrl  && !!jira.projectKey && !!jira.apiToken  && !!jira.userEmail
   const isAzureConfigured = azure.enabled && !!azure.orgUrl  && !!azure.project   && !!azure.patToken
 
-  const setTestCases = useAppStore(s => s.setTestCases)
-
   const [activeTab, setActiveTab] = useState<Tab>("requirements")
   const [jiraPushState,  setJiraPushState]  = useState<"idle" | "loading" | "error">("idle")
   const [azurePushState, setAzurePushState] = useState<"idle" | "loading" | "error">("idle")
   const [jiraError,  setJiraError]  = useState<string | null>(null)
   const [azureError, setAzureError] = useState<string | null>(null)
   const [dodModalOpen, setDodModalOpen] = useState(false)
-  const [isGeneratingTc, setIsGeneratingTc] = useState(false)
 
   const handleKey = useCallback((e: KeyboardEvent) => {
     if (e.key === "Escape") onClose()
@@ -160,32 +156,6 @@ export function TicketModal({ ticketId, onClose }: TicketModalProps) {
   const handleDelete = () => {
     removeTicket(ticket.id)
     onClose()
-  }
-
-  const handleGenerateTestCases = async () => {
-    setIsGeneratingTc(true)
-    try {
-      let requirement: string
-      if (ticket.ticketType === 'bug' && ticket.bugReport) {
-        requirement = `
-Bug Title: ${ticket.title}
-Severity: ${ticket.bugReport.severity}
-Affected Area: ${ticket.bugReport.affectedArea}
-Steps to Reproduce:
-${ticket.bugReport.stepsToReproduce.map((s, i) => `${i + 1}. ${s}`).join('\n')}
-Expected Behavior: ${ticket.bugReport.expectedBehavior}
-Actual Behavior: ${ticket.bugReport.actualBehavior}
-        `.trim()
-      } else {
-        requirement = JSON.stringify(ticket.data)
-      }
-      const cases = await qaTestCaseAgentFromString(requirement)
-      setTestCases(ticket.id, cases)
-    } catch (e) {
-      console.error('Failed to generate test cases:', e)
-    } finally {
-      setIsGeneratingTc(false)
-    }
   }
 
   const handleCopyJSON = () => {
@@ -471,16 +441,7 @@ Actual Behavior: ${ticket.bugReport.actualBehavior}
 
           {/* Test Cases tab */}
           {activeTab === "testcases" && (
-            <TestCasePanel
-              ticketId={ticketId}
-              ticketTitle={ticket.title}
-              onGenerate={
-                ticket.ticketType === 'bug' || ticket.status === 'inprog'
-                  ? handleGenerateTestCases
-                  : undefined
-              }
-              isGenerating={isGeneratingTc}
-            />
+            <TestCasePanel ticketId={ticketId} ticketTitle={ticket.title} />
           )}
 
           {/* Tech Notes tab */}
