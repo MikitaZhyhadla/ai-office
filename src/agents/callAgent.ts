@@ -1,3 +1,5 @@
+import { stripJsonFences } from '@/lib/parseJson'
+
 function getModel(): string {
   if (typeof window === 'undefined') return 'claude-haiku-4-5-20251001'
   try {
@@ -25,7 +27,7 @@ export async function callAgent(system: string, userMessage: string): Promise<st
       })
       const data = await res.json()
       const text = data.content?.map((c: any) => c.text || "").join("") ?? ""
-      return text.replace(/```json|```/g, "").trim()
+      return stripJsonFences(text)
     } catch (err) {
       if (attempt === 3) throw err
       await new Promise(r => setTimeout(r, attempt * 1000))

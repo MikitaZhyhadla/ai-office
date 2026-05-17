@@ -1,4 +1,5 @@
 import { callAgent } from "./callAgent"
+import { stripJsonFences } from '@/lib/parseJson'
 import type { Ticket, PrioritizationReport } from "@/types"
 
 const SYSTEM = `You are Alice BA, a senior business analyst and agile coach specialising in backlog prioritization.
@@ -64,9 +65,8 @@ export async function runPrioritizationAgent(
 ): Promise<PrioritizationReport> {
   const userPrompt = buildUserPrompt(tickets, sprintName, sprintDates, projectDescription, totalSprintSP)
   const raw = await callAgent(SYSTEM, userPrompt)
-  const clean = raw.replace(/```json|```/g, '').trim()
   try {
-    const parsed = JSON.parse(clean) as PrioritizationReport
+    const parsed = JSON.parse(stripJsonFences(raw)) as PrioritizationReport
     if (!parsed.results || parsed.results.length !== tickets.length) {
       throw new Error('result count mismatch')
     }

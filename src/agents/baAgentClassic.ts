@@ -1,4 +1,5 @@
 import { callAgent } from "./callAgent"
+import { stripJsonFences } from '@/lib/parseJson'
 import type { ClassicRequirement } from "@/types"
 
 const SYSTEM = `You are a BA agent. Convert requirements to classic spec format.
@@ -19,5 +20,10 @@ Return ONLY valid JSON, no markdown:
 
 export async function baAgentClassic(rawRequirement: string): Promise<ClassicRequirement> {
   const text = await callAgent(SYSTEM, `Convert this requirement:\n\n${rawRequirement}`)
-  return JSON.parse(text) as ClassicRequirement
+  try {
+    return JSON.parse(stripJsonFences(text)) as ClassicRequirement
+  } catch (e) {
+    console.error('baAgentClassic raw response:', text)
+    throw new Error('baAgentClassic: failed to parse response')
+  }
 }

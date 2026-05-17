@@ -40,8 +40,8 @@ export function TechNotesPanel({ ticket, onGenerated }: TechNotesPanelProps) {
     try {
       const notes = await runDevTechNotesAgent(ticket, projectDescription)
       onGenerated(notes)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error')
+    } catch {
+      setError('Failed to generate tech notes. Please try again.')
     } finally {
       setIsLoading(false)
     }
