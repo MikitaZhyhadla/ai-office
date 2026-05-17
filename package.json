@@ -1,9 +1,11 @@
 {
   "name": "ai-office",
-  "version": "0.1.0",
+  "version": "3.3.0",
   "private": true,
   "scripts": {
+    "predev": "node scripts/gen-build-info.js",
     "dev": "next dev",
+    "prebuild": "node scripts/gen-build-info.js",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"

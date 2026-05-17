@@ -127,9 +127,20 @@ export const useAppStore = create<AppState>()(
       setAgentStatus: (id, status, task) => set(s => ({
         agents: s.agents.map(a => a.id === id ? { ...a, status, currentTask: task } : a)
       })),
-      addLog: (entry) => set(s => ({
-        log: [...s.log, { ...entry, id: crypto.randomUUID(), timestamp: new Date().toISOString() }]
-      })),
+      addLog: (entry) => set(s => {
+        const now = Date.now()
+        const thirtySecondsAgo = now - 30000
+        const isDuplicate = s.log.some(
+          existing =>
+            existing.agentRole === entry.agentRole &&
+            existing.message === entry.message &&
+            new Date(existing.timestamp).getTime() > thirtySecondsAgo
+        )
+        if (isDuplicate) return s
+        return {
+          log: [...s.log, { ...entry, id: crypto.randomUUID(), timestamp: new Date().toISOString() }]
+        }
+      }),
       incPipeline: (stage, delta) => set(s => ({
         pipeline: { ...s.pipeline, [stage]: Math.max(0, s.pipeline[stage] + delta) }
       })),

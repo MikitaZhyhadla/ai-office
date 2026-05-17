@@ -1,6 +1,7 @@
 "use client"
 import { useAppStore } from "@/store/useAppStore"
 import { qaTestCaseAgent } from "@/agents/qaTestCaseAgent"
+import { qaTestCaseAgentFromString } from "@/agents/qaTestCaseAgent"
 import type { TestCase } from "@/types"
 
 interface TestCasePanelProps {
@@ -21,15 +22,28 @@ export function TestCasePanel({ ticketId, ticketTitle }: TestCasePanelProps) {
   const generatingFor = useAppStore(s => s.generatingTcFor)
   const ticket        = useAppStore(s => s.tickets.find(t => t.id === ticketId))
 
-  const cases       = testCasesMap[ticketId] ?? []
+  const cases        = testCasesMap[ticketId] ?? []
   const isGenerating = generatingFor.includes(ticketId)
-  const canGenerate  = !!ticket && ticket.format !== 'bug'
+  const canGenerate  = !!ticket
 
   async function handleGenerate() {
-    if (!ticket || !canGenerate || isGenerating) return
+    if (!ticket || isGenerating) return
     setGenerating(ticketId, true)
     try {
-      const newCases = await qaTestCaseAgent(ticketId, ticketTitle, ticket.data, ticket.format)
+      let newCases: TestCase[]
+      if (ticket.ticketType === 'bug' && ticket.bugReport) {
+        const requirementText = `
+Bug: ${ticket.title}
+Severity: ${ticket.bugReport.severity}
+Affected Area: ${ticket.bugReport.affectedArea}
+Steps to Reproduce: ${ticket.bugReport.stepsToReproduce?.join('; ')}
+Expected: ${ticket.bugReport.expectedBehavior}
+Actual: ${ticket.bugReport.actualBehavior}
+        `.trim()
+        newCases = await qaTestCaseAgentFromString(requirementText)
+      } else {
+        newCases = await qaTestCaseAgent(ticketId, ticketTitle, ticket.data, ticket.format)
+      }
       setTestCases(ticketId, newCases)
     } catch (e) {
       console.error('Failed to generate test cases:', e)
@@ -154,6 +168,7 @@ export function TestCasePanel({ ticketId, ticketTitle }: TestCasePanelProps) {
           )
         })
       )}
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   )
 }

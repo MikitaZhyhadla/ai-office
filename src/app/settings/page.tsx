@@ -2,6 +2,7 @@
 import { useRef, useState } from 'react'
 import { useSettingsStore, DodItem } from '@/store/useSettingsStore'
 import { Topbar } from '@/components/shared/Topbar'
+import { BUILD_INFO } from '@/generated/buildInfo'
 
 const MODELS = [
   { id: 'claude-haiku-4-5-20251001',   name: 'Claude Haiku 4.5',  desc: 'Fast & cheap · Default' },
@@ -474,8 +475,8 @@ function AboutSection() {
       <table style={{ borderCollapse: 'collapse', fontSize: 13, color: '#444' }}>
         <tbody>
           {[
-            ['App version',  '3.1.0'],
-            ['Build date',   '2026-05-16'],
+            ['App version',  BUILD_INFO.version],
+            ['Build date',   BUILD_INFO.buildDate],
           ].map(([k, v]) => (
             <tr key={k}>
               <td style={{ paddingRight: 24, paddingBottom: 10, color: '#888', fontWeight: 500 }}>{k}</td>

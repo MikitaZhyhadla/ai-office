@@ -183,12 +183,12 @@ export function TicketModal({ ticketId, onClose }: TicketModalProps) {
                          background:"#EEEDFE", color:"#3C3489", marginRight:14, flexShrink:0 }}>
             {ticket.id}
           </span>
-          {ticket.ticketType === 'bug' && (
-            <span style={{ fontSize:10, fontWeight:600, padding:"2px 8px", borderRadius:10,
-                           background:"#FCEBEB", color:"#791F1F", marginRight:10, flexShrink:0 }}>
-              🐛 Bug
-            </span>
-          )}
+          <span style={{ fontSize:10, fontWeight:600, padding:"2px 8px", borderRadius:10,
+                         background: ticket.ticketType === 'bug' ? "#FCEBEB" : "#DBEAFE",
+                         color: ticket.ticketType === 'bug' ? "#791F1F" : "#1e40af",
+                         marginRight:10, flexShrink:0 }}>
+            {ticket.ticketType === 'bug' ? '🐛 Bug' : 'User Story'}
+          </span>
           <span style={{ fontSize:16, fontWeight:600, flex:1, lineHeight:1.3 }}>{ticket.title}</span>
           <button onClick={onClose}
             style={{ background:"none", border:"none", cursor:"pointer", color:"#888",

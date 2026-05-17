@@ -57,12 +57,12 @@ export function TicketRow({ ticket, sprintId, isInSprint }: Props) {
       <div style={{ width:3, height:30, borderRadius:2, background:priorityColor, flexShrink:0 }} />
       <div style={{ fontSize:11, color:"#aaa", width:68, fontFamily:"monospace", flexShrink:0 }}>{ticket.id}</div>
       <div style={{ fontSize:13, flex:1, display:"flex", alignItems:"center", gap:7, flexWrap:"wrap" }}>
-        {isBug && (
-          <span style={{ fontSize:10, fontWeight:600, background:"#FCEBEB", color:"#791F1F",
-                         padding:"1px 7px", borderRadius:10, flexShrink:0 }}>
-            🐛 Bug
-          </span>
-        )}
+        <span style={{ fontSize:10, fontWeight:600,
+                       background: isBug ? "#FCEBEB" : "#DBEAFE",
+                       color: isBug ? "#791F1F" : "#1e40af",
+                       padding:"1px 7px", borderRadius:10, flexShrink:0 }}>
+          {isBug ? '🐛 Bug' : 'User Story'}
+        </span>
         {ticket.title}
       </div>
       <div style={{ display:"flex", alignItems:"center", gap:7 }}>
@@ -77,6 +77,25 @@ export function TicketRow({ ticket, sprintId, isInSprint }: Props) {
             background: ticket.format==="gwt" ? "#EEEDFE" : "#E1F5EE",
             color: ticket.format==="gwt" ? "#3C3489" : "#085041" }}>
             {ticket.format.toUpperCase()}
+          </span>
+        )}
+        {isInSprint && (
+          <span style={{ fontSize:10, fontWeight:500, padding:"3px 9px", borderRadius:20,
+            background:
+              ticket.status === 'todo'   ? '#f0f0f0' :
+              ticket.status === 'inprog' ? '#DBEAFE' :
+              ticket.status === 'review' ? '#FAEEDA' :
+              ticket.status === 'done'   ? '#EAF3DE' : '#f0f0f0',
+            color:
+              ticket.status === 'todo'   ? '#555' :
+              ticket.status === 'inprog' ? '#1e40af' :
+              ticket.status === 'review' ? '#854F0B' :
+              ticket.status === 'done'   ? '#27500A' : '#555',
+          }}>
+            {ticket.status === 'todo'   ? 'Todo' :
+             ticket.status === 'inprog' ? 'In Progress' :
+             ticket.status === 'review' ? 'Review' :
+             ticket.status === 'done'   ? 'Done' : ticket.status}
           </span>
         )}
         <span style={{ background:"#f0eff7", border:"1px solid #e0e0f0", borderRadius:5,

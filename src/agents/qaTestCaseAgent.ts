@@ -35,9 +35,7 @@ export async function qaTestCaseAgent(
   format: Format
 ): Promise<TestCase[]> {
   if (format === 'bug') return []
-  const reqText = format === 'gwt'
-    ? JSON.stringify(requirement)
-    : JSON.stringify(requirement)
+  const reqText = JSON.stringify(requirement)
 
   const userMessage = `Generate test cases for this ticket:
 Title: ${ticketTitle}
@@ -46,6 +44,18 @@ Format: ${format.toUpperCase()}
 Requirement:
 ${reqText}`
 
+  const text = await callAgent(SYSTEM, userMessage)
+  try {
+    const parsed = JSON.parse(stripJsonFences(text)) as { testCases: TestCase[] }
+    return parsed.testCases
+  } catch (e) {
+    console.error('qaTestCaseAgent raw response:', text)
+    throw new Error('qaTestCaseAgent: failed to parse response')
+  }
+}
+
+export async function qaTestCaseAgentFromString(requirement: string): Promise<TestCase[]> {
+  const userMessage = `Generate test cases for this requirement:\n${requirement}`
   const text = await callAgent(SYSTEM, userMessage)
   try {
     const parsed = JSON.parse(stripJsonFences(text)) as { testCases: TestCase[] }
