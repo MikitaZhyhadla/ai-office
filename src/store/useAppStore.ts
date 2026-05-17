@@ -41,6 +41,8 @@ interface AppState {
   setTestCases: (ticketId: string, cases: TestCase[]) => void
   setGeneratingTc: (ticketId: string, loading: boolean) => void
   closeSprintWithRetro: (sprintId: string, retro: RetroReport) => void
+  createSprint: (name: string, startDate: string, endDate: string) => void
+  closeSprint: (sprintId: string) => { resolvedCount: number; returnedCount: number; velocity: number }
   resetStore: () => void
 }
 
@@ -51,7 +53,7 @@ export const useAppStore = create<AppState>()(
       testCases: {},
       generatingTcFor: [],
       closedSprints: [],
-      sprints: [{ id: "sprint-3", name: "Sprint 3", startDate: "2026-05-12", endDate: "2026-05-25", ticketIds: [] }],
+      sprints: [{ id: "sprint-3", name: "Sprint 3", startDate: "2026-05-12", endDate: "2026-05-25", ticketIds: [], status: 'active' as const }],
       agents: [
         { id: "alice", name: "Alice BA", role: "ba", status: "idle" },
         { id: "bob", name: "Bob BA", role: "ba", status: "idle" },
@@ -160,6 +162,57 @@ export const useAppStore = create<AppState>()(
             : t
         ),
       })),
+      createSprint: (name, startDate, endDate) => set(s => ({
+        sprints: [...s.sprints, {
+          id: crypto.randomUUID(),
+          name,
+          startDate,
+          endDate,
+          ticketIds: [],
+          status: 'active' as const,
+        }],
+      })),
+      closeSprint: (sprintId) => {
+        let resolvedCount = 0, returnedCount = 0, velocity = 0
+        set(s => {
+          const sprint = s.sprints.find(sp => sp.id === sprintId)
+          if (!sprint) return s
+
+          const sprintTickets = s.tickets.filter(t => sprint.ticketIds.includes(t.id))
+          const done = sprintTickets.filter(t => t.status === 'done')
+          const unfinished = sprintTickets.filter(t => t.status !== 'done')
+
+          resolvedCount = done.length
+          returnedCount = unfinished.length
+          velocity = done.reduce((sum, t) => sum + (t.points ?? 0), 0)
+
+          const now = new Date().toISOString()
+          const doneIds = new Set(done.map(t => t.id))
+          const unfinishedIds = new Set(unfinished.map(t => t.id))
+          const allSprintIds = new Set([...doneIds, ...unfinishedIds])
+
+          const updatedTickets = s.tickets.map(t => {
+            if (doneIds.has(t.id)) return { ...t, resolvedInSprint: sprintId, resolvedAt: now, inSprint: false }
+            if (unfinishedIds.has(t.id)) return { ...t, inSprint: false, sprintId: undefined, status: 'todo' as const }
+            return t
+          })
+
+          const cols: KanbanColumn[] = ['todo', 'inprog', 'review', 'done']
+          const nextKanban = { ...s.kanban }
+          cols.forEach(c => { nextKanban[c] = nextKanban[c].filter(t => !allSprintIds.has(t.id)) })
+          const returning = unfinished.map(t => ({ ...t, inSprint: false, sprintId: undefined, status: 'todo' as const }))
+          nextKanban.todo = [...nextKanban.todo, ...returning]
+
+          const updatedSprints = s.sprints.map(sp =>
+            sp.id === sprintId
+              ? { ...sp, status: 'closed' as const, closedAt: now, velocity, ticketIds: [] }
+              : sp
+          )
+
+          return { tickets: updatedTickets, kanban: nextKanban, sprints: updatedSprints }
+        })
+        return { resolvedCount, returnedCount, velocity }
+      },
       closeSprintWithRetro: (sprintId, retro) => set(state => ({
         closedSprints: [
           ...state.closedSprints,

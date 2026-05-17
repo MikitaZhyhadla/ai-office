@@ -6,6 +6,7 @@ import { useSettingsStore } from "@/store/useSettingsStore"
 import { Topbar } from "@/components/shared/Topbar"
 import { SprintPanel } from "@/components/backlog/SprintPanel"
 import { TicketRow } from "@/components/backlog/TicketRow"
+import { ResolvedItemsSection } from "@/components/backlog/ResolvedItemsSection"
 import { ExportButton } from "@/components/shared/ExportButton"
 import { CreateTicketModal } from "@/components/backlog/CreateTicketModal"
 import { RetroModal } from "@/components/backlog/RetroModal"
@@ -27,10 +28,10 @@ export default function BacklogPage() {
   const [prioritizationSummary, setPrioritizationSummary] = useState<string | null>(null)
   const [prioritizationError, setPrioritizationError] = useState<string | null>(null)
 
-  const sprint = sprints[0]
+  const activeSprint = sprints.find(s => s.status === 'active') ?? null
   const myTickets = tickets.filter(t => t.userId === currentUser?.username)
-  const sprintTickets = myTickets.filter(t => sprint.ticketIds.includes(t.id))
-  const backlogTickets = myTickets.filter(t => !sprint.ticketIds.includes(t.id))
+  const sprintTickets = activeSprint ? myTickets.filter(t => activeSprint.ticketIds.includes(t.id)) : []
+  const backlogTickets = myTickets.filter(t => !activeSprint?.ticketIds.includes(t.id) && !t.resolvedInSprint)
 
   function handleCreateTicket(ticket: Ticket) {
     addTicket(ticket)
@@ -46,7 +47,6 @@ export default function BacklogPage() {
     try {
       const { projectDescription: desc } = useSettingsStore.getState()
 
-      const activeSprint = sprints[0]
       const sprintName = activeSprint?.name ?? 'Current Sprint'
       const sprintDates = activeSprint
         ? `${activeSprint.startDate ?? 'TBD'} – ${activeSprint.endDate ?? 'TBD'}`
@@ -79,6 +79,7 @@ export default function BacklogPage() {
   }
 
   async function handleCloseSprintAndRetro() {
+    if (!activeSprint) return
     setRetroLoading(true)
     setRetroModalOpen(true)
     setRetroReport(null)
@@ -113,16 +114,16 @@ export default function BacklogPage() {
       setAvgCycleTimeDays(avgDays)
 
       const result = await runRetroAgent({
-        sprintName:         sprint.name,
-        startDate:          sprint.startDate,
-        endDate:            sprint.endDate,
+        sprintName:         activeSprint.name,
+        startDate:          activeSprint.startDate,
+        endDate:            activeSprint.endDate,
         projectName:        projectName || 'AI Office Project',
         projectDescription: projectDescription || 'A requirements pipeline tool.',
         tickets:            agentTickets,
       })
 
       setRetroReport(result)
-      closeSprintWithRetro(sprint.id, result)
+      closeSprintWithRetro(activeSprint.id, result)
     } catch (err) {
       console.error('Retro generation failed:', err)
       setRetroModalOpen(false)
@@ -138,13 +139,13 @@ export default function BacklogPage() {
       const res = await fetch('/api/export-retro', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ report: retroReport, sprintName: sprint.name }),
+        body: JSON.stringify({ report: retroReport, sprintName: activeSprint?.name ?? 'sprint' }),
       })
       const blob = await res.blob()
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `retro-${sprint.name.replace(/\s+/g, '-')}.txt`
+      a.download = `retro-${(activeSprint?.name ?? 'sprint').replace(/\s+/g, '-')}.txt`
       a.click()
       URL.revokeObjectURL(url)
     } catch (err) {
@@ -264,21 +265,27 @@ export default function BacklogPage() {
           </div>
         )}
 
-        <SprintPanel
-          sprint={sprint}
-          tickets={sprintTickets}
-          onCloseSprint={handleCloseSprintAndRetro}
-          retroLoading={retroLoading}
-        />
+        {activeSprint ? (
+          <SprintPanel
+            sprint={activeSprint}
+            tickets={sprintTickets}
+            onCloseSprint={handleCloseSprintAndRetro}
+            retroLoading={retroLoading}
+          />
+        ) : (
+          <div style={{ background:"#fff", border:"1px solid #e8e8f0", borderRadius:10, padding:14, marginBottom:16, fontSize:12, color:"#aaa", textAlign:"center" }}>
+            No active sprint. Create one from the Kanban board.
+          </div>
+        )}
 
         <div style={{ background:"#fff", border:"1px solid #e8e8f0", borderRadius:10, padding:14 }}>
-          {sprintTickets.length > 0 && (
+          {activeSprint && sprintTickets.length > 0 && (
             <>
               <div style={{ fontSize:11, fontWeight:600, color:"#aaa", letterSpacing:.6, textTransform:"uppercase", marginBottom:10 }}>
                 In Sprint — {sprintTickets.length} tickets
               </div>
               {sprintTickets.map(t => (
-                <TicketRow key={t.id} ticket={t} sprintId={sprint.id} isInSprint={true} />
+                <TicketRow key={t.id} ticket={t} sprintId={activeSprint.id} isInSprint={true} />
               ))}
               <div style={{ marginBottom:16 }} />
             </>
@@ -293,9 +300,11 @@ export default function BacklogPage() {
             </div>
           )}
           {backlogTickets.map(t => (
-            <TicketRow key={t.id} ticket={t} sprintId={sprint.id} isInSprint={false} />
+            <TicketRow key={t.id} ticket={t} sprintId={activeSprint?.id ?? ''} isInSprint={false} />
           ))}
         </div>
+
+        <ResolvedItemsSection />
       </main>
 
       {showCreateModal && (
@@ -308,7 +317,7 @@ export default function BacklogPage() {
       <RetroModal
         isOpen={retroModalOpen}
         report={retroReport}
-        sprintName={sprint?.name ?? ''}
+        sprintName={activeSprint?.name ?? ''}
         isLoading={retroLoading}
         avgCycleTimeDays={avgCycleTimeDays}
         onClose={() => { setRetroModalOpen(false); setRetroReport(null) }}
