@@ -129,7 +129,7 @@ function ProjectSection() {
 
 // ─── AI Model Section ────────────────────────────────────────────────────────
 function ModelSection() {
-  const { model, updateModel } = useSettingsStore()
+  const { model, updateModel, autoTranslate, setAutoTranslate } = useSettingsStore()
 
   return (
     <div id="model" style={card}>
@@ -166,6 +166,61 @@ function ModelSection() {
             </div>
           )
         })}
+      </div>
+
+      {/* Auto-Translation sub-section */}
+      <div style={{ marginTop: 24, borderTop: '1px solid #f0f0f0', paddingTop: 20 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 600, fontSize: 13, color: '#1a1a2e', marginBottom: 4 }}>
+              🌐 Auto-Translation
+            </div>
+            <div style={{ fontSize: 11, color: '#888', lineHeight: 1.6 }}>
+              Automatically translate Russian input to English before BA agent analysis.
+              Always uses Claude Haiku (fast &amp; cheap — adds ~50ms per request).
+            </div>
+          </div>
+          <button
+            role="switch"
+            aria-checked={autoTranslate}
+            onClick={() => setAutoTranslate(!autoTranslate)}
+            style={{
+              width: 36,
+              height: 20,
+              borderRadius: 10,
+              background: autoTranslate ? '#534AB7' : '#d0d0d0',
+              border: 'none',
+              cursor: 'pointer',
+              position: 'relative',
+              transition: 'background 0.2s',
+              flexShrink: 0,
+            }}
+          >
+            <span style={{
+              position: 'absolute',
+              top: 2,
+              left: autoTranslate ? 18 : 2,
+              width: 16,
+              height: 16,
+              borderRadius: '50%',
+              background: 'white',
+              transition: 'left 0.2s',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+              display: 'block',
+            }} />
+          </button>
+        </div>
+        <div style={{
+          background: '#f0f8ff',
+          border: '1px solid #b0d4f0',
+          borderRadius: 8,
+          padding: '10px 13px',
+          fontSize: 11,
+          color: '#1a6fa0',
+          marginTop: 12,
+        }}>
+          ℹ️ Auto-translation always uses Haiku model regardless of your model selection above, to minimize cost.
+        </div>
       </div>
     </div>
   )

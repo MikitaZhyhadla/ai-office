@@ -5,9 +5,10 @@ import type { Format } from "@/types"
 interface Props {
   onSubmit: (text: string, format: Format) => void
   loading: boolean
+  onTextChange?: () => void
 }
 
-export function RequirementInput({ onSubmit, loading }: Props) {
+export function RequirementInput({ onSubmit, loading, onTextChange }: Props) {
   const [text, setText] = useState("")
   const [format, setFormat] = useState<Format>("gwt")
   return (
@@ -27,7 +28,7 @@ export function RequirementInput({ onSubmit, loading }: Props) {
         </div>
       </div>
       <textarea
-        value={text} onChange={e => setText(e.target.value)}
+        value={text} onChange={e => { setText(e.target.value); onTextChange?.() }}
         placeholder="Describe the feature or user story..."
         rows={4}
         style={{ width:"100%", background:"#f8f8fc", border:"1px solid #e8e8f0", borderRadius:8,

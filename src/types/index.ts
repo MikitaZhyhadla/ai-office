@@ -147,7 +147,7 @@ export interface LogEntry {
   id: string
   timestamp: string
   agentName: string
-  agentRole: 'ba' | 'qa' | 'dev' | 'human' | 'system'
+  agentRole: 'ba' | 'qa' | 'dev' | 'human' | 'system' | 'translator'
   message: string
 }
 

@@ -3,8 +3,8 @@ import { useAppStore } from "@/store/useAppStore"
 
 const tagStyle = (role: string): React.CSSProperties => ({
   fontSize:10, fontWeight:600, padding:"1px 7px", borderRadius:4,
-  background: role==="ba" ? "#EEEDFE" : role==="qa" ? "#E1F5EE" : role==="dev" ? "#FAEEDA" : "#f0f0f0",
-  color: role==="ba" ? "#3C3489" : role==="qa" ? "#085041" : role==="dev" ? "#633806" : "#888",
+  background: role==="ba" ? "#EEEDFE" : role==="qa" ? "#E1F5EE" : role==="dev" ? "#FAEEDA" : role==="translator" ? "#f0f8ff" : "#f0f0f0",
+  color: role==="ba" ? "#3C3489" : role==="qa" ? "#085041" : role==="dev" ? "#633806" : role==="translator" ? "#1a6fa0" : "#888",
 })
 
 export function ActivityLog() {
