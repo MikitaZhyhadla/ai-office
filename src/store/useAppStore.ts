@@ -103,15 +103,27 @@ export const useAppStore = create<AppState>()(
         })),
         selectedTicketId: s.selectedTicketId === ticketId ? null : s.selectedTicketId,
       })),
-      toggleSprint: (ticketId, sprintId) => set(s => ({
-        sprints: s.sprints.map(sp =>
-          sp.id === sprintId
-            ? { ...sp, ticketIds: sp.ticketIds.includes(ticketId)
-                ? sp.ticketIds.filter(id => id !== ticketId)
-                : [...sp.ticketIds, ticketId] }
-            : sp
-        )
-      })),
+      toggleSprint: (ticketId, sprintId) => set(s => {
+        const sprint = s.sprints.find(sp => sp.id === sprintId)
+        const isCurrentlyIn = sprint?.ticketIds.includes(ticketId) ?? false
+        const willBeIn = !isCurrentlyIn
+        const cols: KanbanColumn[] = ["todo","inprog","review","done"]
+        const nextKanban = { ...s.kanban }
+        cols.forEach(c => {
+          nextKanban[c] = nextKanban[c].map(t => t.id === ticketId ? { ...t, inSprint: willBeIn } : t)
+        })
+        return {
+          sprints: s.sprints.map(sp =>
+            sp.id === sprintId
+              ? { ...sp, ticketIds: isCurrentlyIn
+                  ? sp.ticketIds.filter(id => id !== ticketId)
+                  : [...sp.ticketIds, ticketId] }
+              : sp
+          ),
+          tickets: s.tickets.map(t => t.id === ticketId ? { ...t, inSprint: willBeIn } : t),
+          kanban: nextKanban,
+        }
+      }),
       setAgentStatus: (id, status, task) => set(s => ({
         agents: s.agents.map(a => a.id === id ? { ...a, status, currentTask: task } : a)
       })),

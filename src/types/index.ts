@@ -114,6 +114,7 @@ export interface Ticket {
   moscow?:              MoSCoWCategory
   moscowJustification?: string
   suggestedSP?:         number
+  inSprint?:            boolean
 }
 export interface Agent {
   id: string
