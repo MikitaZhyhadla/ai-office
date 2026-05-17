@@ -20,11 +20,15 @@ export function KanbanCard({ ticket }: { ticket: Ticket }) {
     isDragging,
   } = useSortable({ id: ticket.id })
 
+  const isBug      = ticket.ticketType === 'bug'
+  const isCritical = ticket.severity === 'critical'
+
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    background: "#fff",
+    background: isCritical ? "#FFF5F5" : "#fff",
     border: "1px solid #e8e8f0",
+    borderLeft: isBug ? "3px solid #791F1F" : undefined,
     borderRadius: 8,
     padding: 10,
     marginBottom: 7,
@@ -33,6 +37,9 @@ export function KanbanCard({ ticket }: { ticket: Ticket }) {
 
   const priorityColor = ticket.priority === "high" ? "#E24B4A" : ticket.priority === "medium" ? "#EF9F27" : "#639922"
   const priorityBg    = ticket.priority === "high" ? "#FCEBEB" : ticket.priority === "medium" ? "#FAEEDA" : "#EAF3DE"
+
+  const severityColor = ticket.severity === 'critical' ? "#791F1F" : ticket.severity === 'major' ? "#854F0B" : "#666"
+  const severityBg    = ticket.severity === 'critical' ? "#FCEBEB" : ticket.severity === 'major' ? "#FAEEDA" : "#f0f0f0"
 
   const handleClick = (e: React.MouseEvent) => {
     if (isDragging) return
@@ -65,24 +72,50 @@ export function KanbanCard({ ticket }: { ticket: Ticket }) {
         ⠿
       </div>
 
-      <div style={{ fontSize:12, fontWeight:500, marginBottom:7, lineHeight:1.4 }}>{ticket.title}</div>
-      <div style={{ display:"flex", gap:5, marginBottom:5 }}>
-        <span style={{ fontSize:10, fontWeight:500, padding:"2px 7px", borderRadius:20,
-          background: ticket.format==="gwt" ? "#EEEDFE" : "#E1F5EE",
-          color: ticket.format==="gwt" ? "#3C3489" : "#085041" }}>
-          {ticket.format.toUpperCase()}
+      {/* Bug badge */}
+      {isBug && (
+        <span style={{
+          fontSize: 10,
+          fontWeight: 600,
+          background: "#FCEBEB",
+          color: "#791F1F",
+          padding: "1px 7px",
+          borderRadius: 10,
+          display: "inline-block",
+          marginBottom: 4,
+        }}>
+          🐛 Bug · {ticket.severity ? ticket.severity.charAt(0).toUpperCase() + ticket.severity.slice(1) : 'Bug'}
         </span>
+      )}
+
+      <div style={{ fontSize:12, fontWeight:500, marginBottom:7, lineHeight:1.4 }}>{ticket.title}</div>
+      <div style={{ display:"flex", gap:5, marginBottom:5, flexWrap:"wrap" }}>
+        {!isBug && (
+          <span style={{ fontSize:10, fontWeight:500, padding:"2px 7px", borderRadius:20,
+            background: ticket.format==="gwt" ? "#EEEDFE" : "#E1F5EE",
+            color: ticket.format==="gwt" ? "#3C3489" : "#085041" }}>
+            {ticket.format.toUpperCase()}
+          </span>
+        )}
         <span style={{ fontSize:10, background:"#f0eff7", border:"1px solid #e0e0f0",
           borderRadius:4, padding:"1px 7px", color:"#534AB7", fontWeight:600 }}>
           {ticket.points} SP
         </span>
       </div>
-      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:4 }}>
         <span style={{ fontSize:10, color:"#aaa", fontFamily:"monospace" }}>{ticket.id}</span>
-        <span style={{ fontSize:10, fontWeight:500, padding:"2px 7px", borderRadius:20,
-          background:priorityBg, color:priorityColor }}>
-          {ticket.priority}
-        </span>
+        <div style={{ display:"flex", gap:5, alignItems:"center" }}>
+          {isBug && ticket.severity && (
+            <span style={{ fontSize:10, fontWeight:500, padding:"2px 7px", borderRadius:20,
+              background: severityBg, color: severityColor }}>
+              {ticket.severity.charAt(0).toUpperCase() + ticket.severity.slice(1)}
+            </span>
+          )}
+          <span style={{ fontSize:10, fontWeight:500, padding:"2px 7px", borderRadius:20,
+            background:priorityBg, color:priorityColor }}>
+            {ticket.priority}
+          </span>
+        </div>
       </div>
 
       {isGenerating && (

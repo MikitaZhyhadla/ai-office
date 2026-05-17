@@ -1,5 +1,5 @@
 import { callAgent } from "./callAgent"
-import type { TestCase, GWTRequirement, ClassicRequirement } from "@/types"
+import type { TestCase, GWTRequirement, ClassicRequirement, Format } from "@/types"
 
 const SYSTEM = `You are a QA Lead agent. Generate comprehensive test cases for a software requirement.
 You MUST return ONLY valid JSON — no explanation, no markdown, no preamble.
@@ -31,8 +31,9 @@ export async function qaTestCaseAgent(
   ticketId: string,
   ticketTitle: string,
   requirement: GWTRequirement | ClassicRequirement,
-  format: 'gwt' | 'classic'
+  format: Format
 ): Promise<TestCase[]> {
+  if (format === 'bug') return []
   const reqText = format === 'gwt'
     ? JSON.stringify(requirement)
     : JSON.stringify(requirement)

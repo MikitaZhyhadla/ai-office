@@ -7,17 +7,20 @@ import { ReviewCard } from "@/components/pipeline/ReviewCard"
 import { RevisionBanner } from "@/components/pipeline/RevisionBanner"
 import { ActivityLog } from "@/components/pipeline/ActivityLog"
 import { useAppStore } from "@/store/useAppStore"
+import { useSettingsStore } from "@/store/useSettingsStore"
 import { baAgentGWT } from "@/agents/baAgentGWT"
 import { baAgentClassic } from "@/agents/baAgentClassic"
 import { baAgentRevise } from "@/agents/baAgentRevise"
 import { qaAgent } from "@/agents/qaAgent"
 import { devAgent } from "@/agents/devAgent"
+import { runBugAgent } from "@/agents/bugAgent"
 import { useAuthStore } from "@/store/useAuthStore"
-import type { Format, RequirementData, Ticket, TicketHistoryEntry } from "@/types"
+import type { Format, RequirementData, Ticket, TicketHistoryEntry, Severity } from "@/types"
 import type { QAVerdict } from "@/agents/qaAgent"
 import type { DevVerdict } from "@/agents/devAgent"
 
 type PipelineMode = 'idle' | 'analyzing' | 'review' | 'qa_check' | 'revision' | 'done'
+type PipelineInputMode = 'feature' | 'bug'
 
 export default function PipelinePage() {
   const { setAgentStatus, addLog, addTicket, incPipeline } = useAppStore()
@@ -30,6 +33,11 @@ export default function PipelinePage() {
   const [devVerdict, setDevVerdict] = useState<DevVerdict | null>(null)
   const [isRevising, setIsRevising] = useState(false)
   const [revisionCount, setRevisionCount] = useState(0)
+
+  const [inputMode, setInputMode] = useState<PipelineInputMode>('feature')
+  const [bugText, setBugText] = useState('')
+  const [bugAffectedArea, setBugAffectedArea] = useState('')
+  const [bugSeverityHint, setBugSeverityHint] = useState<Severity | null>(null)
 
   async function handleSubmit(text: string, format: Format) {
     setLoading(true)
@@ -105,7 +113,7 @@ export default function PipelinePage() {
     const round = revisionCount + 1
     addLog({ agentName: "Alice BA", agentRole: "ba", message: "BA agent is revising requirement based on QA/Dev feedback..." })
     try {
-      const revised = await baAgentRevise(pendingReview, pendingFormat, qaVerdict.issues, devVerdict.blockers)
+      const revised = await baAgentRevise(pendingReview, pendingFormat as 'gwt' | 'classic', qaVerdict.issues, devVerdict.blockers)
       setPendingReview(revised)
       setQaVerdict(null)
       setDevVerdict(null)
@@ -177,13 +185,219 @@ export default function PipelinePage() {
     setDevVerdict(null)
   }
 
+  async function handleAnalyzeBug() {
+    if (bugText.trim().length < 20) return
+    setLoading(true)
+    setMode('analyzing')
+    addLog({ agentName: "Alice BA", agentRole: "ba", message: "🐛 Bug Report received — Alice BA analyzing..." })
+
+    try {
+      const projectDescription = useSettingsStore.getState().projectDescription
+      const bugReport = await runBugAgent(bugText, bugAffectedArea, bugSeverityHint, projectDescription)
+
+      const id = `BUG-${Date.now().toString().slice(-6)}`
+      const now = new Date().toISOString()
+
+      const history: TicketHistoryEntry[] = [{
+        id: crypto.randomUUID(),
+        timestamp: now,
+        actor: "Alice BA",
+        actorRole: "ba",
+        message: `Bug ticket created — Severity: ${bugReport.severity} | Area: ${bugReport.affectedArea}`,
+      }]
+
+      const newTicket: Ticket = {
+        id,
+        title: bugReport.title,
+        ticketType: 'bug',
+        format: 'bug',
+        data: bugReport as unknown as RequirementData,
+        bugReport,
+        severity: bugReport.severity,
+        priority: bugReport.severity === 'critical' ? 'high' : bugReport.severity === 'major' ? 'medium' : 'low',
+        points: bugReport.severity === 'critical' ? 3 : bugReport.severity === 'major' ? 2 : 1,
+        status: 'todo',
+        sprintId: undefined,
+        history,
+        createdAt: now,
+        userId: currentUser?.username,
+        pushedTo: null,
+      }
+
+      addTicket(newTicket)
+      incPipeline("done", 1)
+      addLog({ agentName: "System", agentRole: "system", message: `✅ Bug ticket created: ${bugReport.title} [${bugReport.severity}]` })
+
+      setBugText('')
+      setBugAffectedArea('')
+      setBugSeverityHint(null)
+      setMode('done')
+    } catch (err) {
+      console.error(err)
+      addLog({ agentName: "System", agentRole: "system", message: `❌ Bug analysis failed: ${String(err)}` })
+      setMode('idle')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const severityButtons: { value: Severity; label: string; selectedBg: string; selectedColor: string; selectedBorder: string }[] = [
+    { value: 'critical', label: '🔴 Critical', selectedBg: '#FCEBEB', selectedColor: '#791F1F', selectedBorder: '#FCA5A5' },
+    { value: 'major',    label: '🟡 Major',    selectedBg: '#FAEEDA', selectedColor: '#854F0B', selectedBorder: '#EF9F27' },
+    { value: 'minor',    label: '⚪ Minor',    selectedBg: '#f0f0f0', selectedColor: '#666',    selectedBorder: '#e0e0e0' },
+  ]
+
   return (
     <div style={{ background: "#f0eff7", minHeight: "100vh" }}>
       <Topbar />
       <main style={{ padding: 22, maxWidth: 900, margin: "0 auto" }}>
         <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 18 }}>Requirements Pipeline</div>
         <PipelineStages />
-        <RequirementInput onSubmit={handleSubmit} loading={loading} />
+
+        {/* Mode toggle */}
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ background: "#f0eff7", borderRadius: 8, padding: 3, display: "flex", width: "fit-content", gap: 3 }}>
+            {([
+              { m: 'feature', label: '✦ Feature' },
+              { m: 'bug',     label: '🐛 Bug Report' },
+            ] as { m: PipelineInputMode; label: string }[]).map(({ m, label }) => (
+              <button
+                key={m}
+                onClick={() => setInputMode(m)}
+                style={{
+                  padding: "7px 18px",
+                  borderRadius: 6,
+                  fontSize: 12,
+                  fontWeight: 500,
+                  border: "none",
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                  background: inputMode === m ? "#fff" : "transparent",
+                  color: inputMode === m ? "#534AB7" : "#888",
+                  boxShadow: inputMode === m ? "0 1px 4px rgba(0,0,0,0.10)" : "none",
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {inputMode === 'feature' ? (
+          <RequirementInput onSubmit={handleSubmit} loading={loading} />
+        ) : (
+          <div style={{
+            background: "#fff",
+            border: "1.5px solid #FCA5A5",
+            borderRadius: 10,
+            padding: 16,
+            marginBottom: 16,
+          }}>
+            <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>New Bug Report</div>
+            <div style={{ fontSize: 12, color: "#888", marginBottom: 16 }}>
+              BA agent will classify severity and create a ticket
+            </div>
+
+            {/* Severity */}
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 11, fontWeight: 500, color: "#666", marginBottom: 8 }}>
+                Severity{" "}
+                <span style={{ color: "#aaa", fontWeight: 400 }}>
+                  (optional — agent will classify if not set)
+                </span>
+              </div>
+              <div style={{ display: "flex", gap: 8 }}>
+                {severityButtons.map(({ value, label, selectedBg, selectedColor, selectedBorder }) => (
+                  <button
+                    key={value}
+                    onClick={() => setBugSeverityHint(bugSeverityHint === value ? null : value)}
+                    style={{
+                      padding: "6px 14px",
+                      borderRadius: 6,
+                      fontSize: 11,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      fontFamily: "inherit",
+                      background: bugSeverityHint === value ? selectedBg : "#fff",
+                      color: bugSeverityHint === value ? selectedColor : "#aaa",
+                      border: `2px solid ${bugSeverityHint === value ? selectedBorder : "#e8e8f0"}`,
+                    }}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Description */}
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 11, fontWeight: 500, color: "#666", marginBottom: 6 }}>
+                Bug Description <span style={{ color: "#E24B4A" }}>*</span>
+              </div>
+              <textarea
+                value={bugText}
+                onChange={e => setBugText(e.target.value)}
+                placeholder="Describe the bug — what happened, what was expected, steps to reproduce"
+                rows={5}
+                style={{
+                  width: "100%",
+                  background: "#f8f8fc",
+                  border: "1px solid #e8e8f0",
+                  borderRadius: 8,
+                  padding: 10,
+                  fontSize: 12,
+                  lineHeight: 1.6,
+                  resize: "none",
+                  outline: "none",
+                  boxSizing: "border-box",
+                }}
+              />
+            </div>
+
+            {/* Affected area */}
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 11, fontWeight: 500, color: "#666", marginBottom: 6 }}>Affected Area</div>
+              <input
+                value={bugAffectedArea}
+                onChange={e => setBugAffectedArea(e.target.value)}
+                placeholder="e.g. Authentication / Login Form"
+                style={{
+                  width: "100%",
+                  background: "#f8f8fc",
+                  border: "1px solid #e8e8f0",
+                  borderRadius: 8,
+                  padding: "8px 10px",
+                  fontSize: 12,
+                  outline: "none",
+                  boxSizing: "border-box",
+                }}
+              />
+            </div>
+
+            {/* Submit */}
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <button
+                onClick={handleAnalyzeBug}
+                disabled={loading || bugText.trim().length < 20}
+                style={{
+                  background: loading || bugText.trim().length < 20 ? "#ccc" : "#534AB7",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: 8,
+                  padding: "9px 18px",
+                  fontSize: 12,
+                  fontWeight: 500,
+                  fontFamily: "inherit",
+                  cursor: loading || bugText.trim().length < 20 ? "not-allowed" : "pointer",
+                }}
+              >
+                {loading ? "Analyzing..." : "🐛 Analyze Bug with BA Agent"}
+              </button>
+              <span style={{ fontSize: 11, color: "#aaa" }}>● Agents ready</span>
+            </div>
+          </div>
+        )}
+
         {pendingReview && (
           <>
             <ReviewCard
