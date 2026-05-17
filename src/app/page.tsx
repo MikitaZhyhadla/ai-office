@@ -1,6 +1,8 @@
 "use client"
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Topbar } from "@/components/shared/Topbar"
+import { AgentToast } from "@/components/shared/AgentToast"
 import { PipelineStages } from "@/components/pipeline/PipelineStages"
 import { RequirementInput } from "@/components/pipeline/RequirementInput"
 import { ReviewCard } from "@/components/pipeline/ReviewCard"
@@ -27,9 +29,11 @@ type PipelineMode = 'idle' | 'analyzing' | 'review' | 'qa_check' | 'revision' | 
 type PipelineInputMode = 'feature' | 'bug'
 
 export default function PipelinePage() {
+  const router = useRouter()
   const { setAgentStatus, addLog, addTicket, incPipeline } = useAppStore()
   const currentUser = useAuthStore(s => s.currentUser)
   const [loading, setLoading] = useState(false)
+  const [activeAgentName, setActiveAgentName] = useState('')
   const [mode, setMode] = useState<PipelineMode>('idle')
   const [pendingReview, setPendingReview] = useState<RequirementData | null>(null)
   const [pendingFormat, setPendingFormat] = useState<Format>('gwt')
@@ -62,6 +66,7 @@ export default function PipelinePage() {
 
     if (autoTranslate && needsTranslation(textToAnalyze)) {
       const langName = detectLanguageName(textToAnalyze)
+      setActiveAgentName("Translator")
       addLog({ agentName: "Translator", agentRole: "translator", message: `Detected ${langName} text — translating to English…` })
       try {
         const result = await runTranslationAgent(textToAnalyze, langName)
@@ -77,6 +82,7 @@ export default function PipelinePage() {
     try {
       incPipeline("ba", 1)
       if (format === "gwt") {
+        setActiveAgentName("Alice BA")
         setAgentStatus("alice", "thinking", "Analyzing requirement")
         addLog({ agentName: "Alice BA", agentRole: "ba", message: "Starting GWT analysis..." })
         const result = await baAgentGWT(textToAnalyze)
@@ -84,6 +90,7 @@ export default function PipelinePage() {
         addLog({ agentName: "Alice BA", agentRole: "ba", message: `Generated ${result.scenarios.length} scenarios for "${result.title}"` })
         setPendingReview(result)
       } else {
+        setActiveAgentName("Bob BA")
         setAgentStatus("bob", "thinking", "Analyzing requirement")
         addLog({ agentName: "Bob BA", agentRole: "ba", message: "Starting Classic spec analysis..." })
         const result = await baAgentClassic(textToAnalyze)
@@ -105,6 +112,7 @@ export default function PipelinePage() {
     setIsApproving(true)
     try {
       setMode('qa_check')
+      setActiveAgentName("QA Lead + Dev Lead")
       setAgentStatus("qa1", "thinking", "Reviewing testability")
       setAgentStatus("dev1", "thinking", "Checking feasibility")
       addLog({ agentName: "QA Lead", agentRole: "qa", message: "Analyzing testability..." })
@@ -143,6 +151,7 @@ export default function PipelinePage() {
     if (!pendingReview || !qaVerdict || !devVerdict) return
     setIsRevising(true)
     const round = revisionCount + 1
+    setActiveAgentName("Alice BA")
     addLog({ agentName: "Alice BA", agentRole: "ba", message: "BA agent is revising requirement based on QA/Dev feedback..." })
     try {
       const revised = await baAgentRevise(pendingReview, pendingFormat as 'gwt' | 'classic', qaVerdict.issues, devVerdict.blockers)
@@ -220,6 +229,7 @@ export default function PipelinePage() {
   async function handleAnalyzeBug() {
     if (bugText.trim().length < 20) return
     setLoading(true)
+    setActiveAgentName("Alice BA")
     setMode('analyzing')
     incPipeline("ba", 1)
     addLog({ agentName: "Alice BA", agentRole: "ba", message: "🐛 Bug Report received — Alice BA analyzing..." })
@@ -280,6 +290,8 @@ export default function PipelinePage() {
     { value: 'major',    label: '🟡 Major',    selectedBg: '#FAEEDA', selectedColor: '#854F0B', selectedBorder: '#EF9F27' },
     { value: 'minor',    label: '⚪ Minor',    selectedBg: '#f0f0f0', selectedColor: '#666',    selectedBorder: '#e0e0e0' },
   ]
+
+  const isAnalyzing = loading || isApproving || isRevising
 
   return (
     <div style={{ background: "#f0eff7", minHeight: "100vh" }}>
@@ -464,6 +476,11 @@ export default function PipelinePage() {
         )}
         <ActivityLog />
       </main>
+      <AgentToast
+        agentName={activeAgentName}
+        isVisible={isAnalyzing}
+        onSettingsClick={() => router.push('/settings')}
+      />
     </div>
   )
 }

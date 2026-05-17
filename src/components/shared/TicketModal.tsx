@@ -8,6 +8,7 @@ import { TestCasePanel } from "./TestCasePanel"
 import { BugReportView } from "./BugReportView"
 import { TechNotesPanel } from "./TechNotesPanel"
 import { MoSCoWBadge } from "./MoSCoWBadge"
+import { qaTestCaseAgentFromString } from "@/agents/qaTestCaseAgent"
 import type { GWTRequirement, ClassicRequirement, KanbanColumn, TicketHistoryEntry } from "@/types"
 
 interface TicketModalProps {
@@ -59,12 +60,15 @@ export function TicketModal({ ticketId, onClose }: TicketModalProps) {
   const isJiraConfigured  = jira.enabled  && !!jira.baseUrl  && !!jira.projectKey && !!jira.apiToken  && !!jira.userEmail
   const isAzureConfigured = azure.enabled && !!azure.orgUrl  && !!azure.project   && !!azure.patToken
 
+  const setTestCases = useAppStore(s => s.setTestCases)
+
   const [activeTab, setActiveTab] = useState<Tab>("requirements")
   const [jiraPushState,  setJiraPushState]  = useState<"idle" | "loading" | "error">("idle")
   const [azurePushState, setAzurePushState] = useState<"idle" | "loading" | "error">("idle")
   const [jiraError,  setJiraError]  = useState<string | null>(null)
   const [azureError, setAzureError] = useState<string | null>(null)
   const [dodModalOpen, setDodModalOpen] = useState(false)
+  const [isGeneratingTc, setIsGeneratingTc] = useState(false)
 
   const handleKey = useCallback((e: KeyboardEvent) => {
     if (e.key === "Escape") onClose()
@@ -158,6 +162,32 @@ export function TicketModal({ ticketId, onClose }: TicketModalProps) {
     onClose()
   }
 
+  const handleGenerateTestCases = async () => {
+    setIsGeneratingTc(true)
+    try {
+      let requirement: string
+      if (ticket.ticketType === 'bug' && ticket.bugReport) {
+        requirement = `
+Bug Title: ${ticket.title}
+Severity: ${ticket.bugReport.severity}
+Affected Area: ${ticket.bugReport.affectedArea}
+Steps to Reproduce:
+${ticket.bugReport.stepsToReproduce.map((s, i) => `${i + 1}. ${s}`).join('\n')}
+Expected Behavior: ${ticket.bugReport.expectedBehavior}
+Actual Behavior: ${ticket.bugReport.actualBehavior}
+        `.trim()
+      } else {
+        requirement = JSON.stringify(ticket.data)
+      }
+      const cases = await qaTestCaseAgentFromString(requirement)
+      setTestCases(ticket.id, cases)
+    } catch (e) {
+      console.error('Failed to generate test cases:', e)
+    } finally {
+      setIsGeneratingTc(false)
+    }
+  }
+
   const handleCopyJSON = () => {
     navigator.clipboard.writeText(JSON.stringify(ticket, null, 2))
   }
@@ -183,12 +213,12 @@ export function TicketModal({ ticketId, onClose }: TicketModalProps) {
                          background:"#EEEDFE", color:"#3C3489", marginRight:14, flexShrink:0 }}>
             {ticket.id}
           </span>
-          {ticket.ticketType === 'bug' && (
-            <span style={{ fontSize:10, fontWeight:600, padding:"2px 8px", borderRadius:10,
-                           background:"#FCEBEB", color:"#791F1F", marginRight:10, flexShrink:0 }}>
-              🐛 Bug
-            </span>
-          )}
+          <span style={{ fontSize:10, fontWeight:600, padding:"2px 8px", borderRadius:10,
+                         background: ticket.ticketType === 'bug' ? "#FCEBEB" : "#DBEAFE",
+                         color: ticket.ticketType === 'bug' ? "#791F1F" : "#1e40af",
+                         marginRight:10, flexShrink:0 }}>
+            {ticket.ticketType === 'bug' ? '🐛 Bug' : 'User Story'}
+          </span>
           <span style={{ fontSize:16, fontWeight:600, flex:1, lineHeight:1.3 }}>{ticket.title}</span>
           <button onClick={onClose}
             style={{ background:"none", border:"none", cursor:"pointer", color:"#888",
@@ -441,7 +471,16 @@ export function TicketModal({ ticketId, onClose }: TicketModalProps) {
 
           {/* Test Cases tab */}
           {activeTab === "testcases" && (
-            <TestCasePanel ticketId={ticketId} ticketTitle={ticket.title} />
+            <TestCasePanel
+              ticketId={ticketId}
+              ticketTitle={ticket.title}
+              onGenerate={
+                ticket.ticketType === 'bug' || ticket.status === 'inprog'
+                  ? handleGenerateTestCases
+                  : undefined
+              }
+              isGenerating={isGeneratingTc}
+            />
           )}
 
           {/* Tech Notes tab */}
