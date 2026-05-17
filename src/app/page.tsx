@@ -36,6 +36,7 @@ export default function PipelinePage() {
   const [qaVerdict, setQaVerdict] = useState<QAVerdict | null>(null)
   const [devVerdict, setDevVerdict] = useState<DevVerdict | null>(null)
   const [isRevising, setIsRevising] = useState(false)
+  const [isApproving, setIsApproving] = useState(false)
   const [revisionCount, setRevisionCount] = useState(0)
 
   const [translationResult, setTranslationResult] = useState<TranslationResult | null>(null)
@@ -74,13 +75,13 @@ export default function PipelinePage() {
     // === END TRANSLATION INTERCEPT ===
 
     try {
+      incPipeline("ba", 1)
       if (format === "gwt") {
         setAgentStatus("alice", "thinking", "Analyzing requirement")
         addLog({ agentName: "Alice BA", agentRole: "ba", message: "Starting GWT analysis..." })
         const result = await baAgentGWT(textToAnalyze)
         setAgentStatus("alice", "idle")
         addLog({ agentName: "Alice BA", agentRole: "ba", message: `Generated ${result.scenarios.length} scenarios for "${result.title}"` })
-        incPipeline("ba", 1)
         setPendingReview(result)
       } else {
         setAgentStatus("bob", "thinking", "Analyzing requirement")
@@ -88,49 +89,54 @@ export default function PipelinePage() {
         const result = await baAgentClassic(textToAnalyze)
         setAgentStatus("bob", "idle")
         addLog({ agentName: "Bob BA", agentRole: "ba", message: `Generated Classic spec for "${result.title}"` })
-        incPipeline("ba", 1)
         setPendingReview(result)
       }
       setMode('review')
       incPipeline("review", 1)
       addLog({ agentName: "System", agentRole: "system", message: "Awaiting human review decision." })
     } finally {
+      incPipeline("ba", -1)
       setLoading(false)
     }
   }
 
   async function handleApprove() {
     if (!pendingReview) return
-    setMode('qa_check')
-    setAgentStatus("qa1", "thinking", "Reviewing testability")
-    setAgentStatus("dev1", "thinking", "Checking feasibility")
-    addLog({ agentName: "QA Lead", agentRole: "qa", message: "Analyzing testability..." })
-    addLog({ agentName: "Dev Lead", agentRole: "dev", message: "Checking feasibility..." })
-    incPipeline("review", -1)
-    incPipeline("qa", 1)
-    const reqText = JSON.stringify(pendingReview)
-    const [qa, dev] = await Promise.all([qaAgent(reqText), devAgent(reqText)])
-    setAgentStatus("qa1", "idle")
-    setAgentStatus("dev1", "idle")
-    setQaVerdict(qa)
-    setDevVerdict(dev)
-    addLog({ agentName: "QA Lead", agentRole: "qa", message: qa.summary })
-    addLog({ agentName: "Dev Lead", agentRole: "dev", message: dev.summary })
+    setIsApproving(true)
+    try {
+      setMode('qa_check')
+      setAgentStatus("qa1", "thinking", "Reviewing testability")
+      setAgentStatus("dev1", "thinking", "Checking feasibility")
+      addLog({ agentName: "QA Lead", agentRole: "qa", message: "Analyzing testability..." })
+      addLog({ agentName: "Dev Lead", agentRole: "dev", message: "Checking feasibility..." })
+      incPipeline("review", -1)
+      incPipeline("qa", 1)
+      const reqText = JSON.stringify(pendingReview)
+      const [qa, dev] = await Promise.all([qaAgent(reqText), devAgent(reqText)])
+      setAgentStatus("qa1", "idle")
+      setAgentStatus("dev1", "idle")
+      setQaVerdict(qa)
+      setDevVerdict(dev)
+      addLog({ agentName: "QA Lead", agentRole: "qa", message: qa.summary })
+      addLog({ agentName: "Dev Lead", agentRole: "dev", message: dev.summary })
 
-    const hasIssues = !qa.testable || !dev.feasible || qa.issues.length > 0 || dev.blockers.length > 0
+      const hasIssues = !qa.testable || !dev.feasible || qa.issues.length > 0 || dev.blockers.length > 0
 
-    if (hasIssues) {
-      incPipeline("qa", -1)
-      setMode('revision')
-      addLog({
-        agentName: "System",
-        agentRole: "system",
-        message: `QA/Dev flagged issues. Revision required — ${qa.issues.length} QA issue(s), ${dev.blockers.length} Dev blocker(s).`,
-      })
-      return
+      if (hasIssues) {
+        incPipeline("qa", -1)
+        setMode('revision')
+        addLog({
+          agentName: "System",
+          agentRole: "system",
+          message: `QA/Dev flagged issues. Revision required — ${qa.issues.length} QA issue(s), ${dev.blockers.length} Dev blocker(s).`,
+        })
+        return
+      }
+
+      createTicket(pendingReview, qa, dev)
+    } finally {
+      setIsApproving(false)
     }
-
-    createTicket(pendingReview, qa, dev)
   }
 
   async function handleSendToBA() {
@@ -215,6 +221,7 @@ export default function PipelinePage() {
     if (bugText.trim().length < 20) return
     setLoading(true)
     setMode('analyzing')
+    incPipeline("ba", 1)
     addLog({ agentName: "Alice BA", agentRole: "ba", message: "🐛 Bug Report received — Alice BA analyzing..." })
 
     try {
@@ -263,6 +270,7 @@ export default function PipelinePage() {
       addLog({ agentName: "System", agentRole: "system", message: `❌ Bug analysis failed: ${String(err)}` })
       setMode('idle')
     } finally {
+      incPipeline("ba", -1)
       setLoading(false)
     }
   }
@@ -284,7 +292,7 @@ export default function PipelinePage() {
         <div style={{ marginBottom: 12 }}>
           <div style={{ background: "#f0eff7", borderRadius: 8, padding: 3, display: "flex", width: "fit-content", gap: 3 }}>
             {([
-              { m: 'feature', label: '✦ Feature' },
+              { m: 'feature', label: '✦ User Story' },
               { m: 'bug',     label: '🐛 Bug Report' },
             ] as { m: PipelineInputMode; label: string }[]).map(({ m, label }) => (
               <button
@@ -441,6 +449,7 @@ export default function PipelinePage() {
               onApprove={handleApprove}
               onRequestChanges={() => { setPendingReview(null); setMode('idle') }}
               revisionCount={revisionCount}
+              isApproving={isApproving}
             />
             {mode === 'revision' && qaVerdict && devVerdict && (
               <RevisionBanner

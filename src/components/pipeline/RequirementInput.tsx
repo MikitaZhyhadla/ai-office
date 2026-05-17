@@ -39,8 +39,18 @@ export function RequirementInput({ onSubmit, loading, onTextChange }: Props) {
         disabled={loading || !text.trim()}
         style={{ marginTop:12, background: loading ? "#ccc" : "#534AB7", color:"#fff",
                  border:"none", borderRadius:8, padding:"9px 18px", fontSize:12,
-                 fontWeight:500, cursor: loading ? "not-allowed" : "pointer" }}>
-        {loading ? "Analyzing..." : "▶ Analyze with BA Agents"}
+                 fontWeight:500, cursor: loading ? "not-allowed" : "pointer",
+                 display:"inline-flex", alignItems:"center", gap:6 }}>
+        {loading ? (
+          <>
+            <svg style={{ animation:"spin 0.8s linear infinite", width:14, height:14, flexShrink:0 }}
+                 viewBox="0 0 24 24" fill="none">
+              <circle style={{ opacity:0.25 }} cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+              <path style={{ opacity:0.75 }} fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+            </svg>
+            Analyzing...
+          </>
+        ) : "▶ Analyze with BA Agents"}
       </button>
     </div>
   )
