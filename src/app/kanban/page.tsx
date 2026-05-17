@@ -23,11 +23,12 @@ export default function KanbanPage() {
   const [pendingDoneTicket, setPendingDoneTicket] = useState<Ticket | null>(null)
 
   const allTickets = Object.values(kanban).flat()
+  const sprintTicketIds = new Set(sprint.ticketIds)
   const myKanban = {
-    todo:   kanban.todo.filter(t => t.userId === currentUser?.username),
-    inprog: kanban.inprog.filter(t => t.userId === currentUser?.username),
-    review: kanban.review.filter(t => t.userId === currentUser?.username),
-    done:   kanban.done.filter(t => t.userId === currentUser?.username),
+    todo:   kanban.todo.filter(t => t.userId === currentUser?.username && sprintTicketIds.has(t.id)),
+    inprog: kanban.inprog.filter(t => t.userId === currentUser?.username && sprintTicketIds.has(t.id)),
+    review: kanban.review.filter(t => t.userId === currentUser?.username && sprintTicketIds.has(t.id)),
+    done:   kanban.done.filter(t => t.userId === currentUser?.username && sprintTicketIds.has(t.id)),
   }
 
   async function triggerQATestCases(ticket: Ticket) {
@@ -93,7 +94,10 @@ export default function KanbanPage() {
 
       if (targetCol === 'inprog') {
         const updatedTicket = { ...ticket, status: 'inprog' as const }
-        triggerQATestCases(updatedTicket)
+        const existingCases = useAppStore.getState().testCases[ticket.id] ?? []
+        if (existingCases.length === 0) {
+          triggerQATestCases(updatedTicket)
+        }
       }
     }
   }
@@ -120,9 +124,7 @@ export default function KanbanPage() {
     setPendingDoneTicket(null)
   }
 
-  const sprintTicketIds = new Set(sprint.ticketIds)
   const totalSP = Object.values(myKanban).flat()
-    .filter(t => sprintTicketIds.has(t.id))
     .reduce((sum, t) => sum + t.points, 0)
 
   return (

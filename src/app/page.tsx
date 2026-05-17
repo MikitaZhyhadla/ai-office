@@ -1,5 +1,5 @@
 "use client"
-import { useState } from "react"
+import { useEffect } from "react"
 import { Topbar } from "@/components/shared/Topbar"
 import { PipelineStages } from "@/components/pipeline/PipelineStages"
 import { RequirementInput } from "@/components/pipeline/RequirementInput"
@@ -8,6 +8,7 @@ import { RevisionBanner } from "@/components/pipeline/RevisionBanner"
 import { ActivityLog } from "@/components/pipeline/ActivityLog"
 import { useAppStore } from "@/store/useAppStore"
 import { useSettingsStore } from "@/store/useSettingsStore"
+import { usePipelineStore } from "@/store/usePipelineStore"
 import { baAgentGWT } from "@/agents/baAgentGWT"
 import { baAgentClassic } from "@/agents/baAgentClassic"
 import { baAgentRevise } from "@/agents/baAgentRevise"
@@ -21,30 +22,52 @@ import { useAuthStore } from "@/store/useAuthStore"
 import type { Format, RequirementData, Ticket, TicketHistoryEntry, Severity } from "@/types"
 import type { QAVerdict } from "@/agents/qaAgent"
 import type { DevVerdict } from "@/agents/devAgent"
-import type { TranslationResult } from "@/agents/translationAgent"
-
-type PipelineMode = 'idle' | 'analyzing' | 'review' | 'qa_check' | 'revision' | 'done'
-type PipelineInputMode = 'feature' | 'bug'
 
 export default function PipelinePage() {
   const { setAgentStatus, addLog, addTicket, incPipeline } = useAppStore()
   const currentUser = useAuthStore(s => s.currentUser)
-  const [loading, setLoading] = useState(false)
-  const [mode, setMode] = useState<PipelineMode>('idle')
-  const [pendingReview, setPendingReview] = useState<RequirementData | null>(null)
-  const [pendingFormat, setPendingFormat] = useState<Format>('gwt')
-  const [qaVerdict, setQaVerdict] = useState<QAVerdict | null>(null)
-  const [devVerdict, setDevVerdict] = useState<DevVerdict | null>(null)
-  const [isRevising, setIsRevising] = useState(false)
-  const [isApproving, setIsApproving] = useState(false)
-  const [revisionCount, setRevisionCount] = useState(0)
 
-  const [translationResult, setTranslationResult] = useState<TranslationResult | null>(null)
+  const {
+    isAnalyzing:        loading,
+    setIsAnalyzing:     setLoading,
+    pipelineMode:       mode,
+    setPipelineMode:    setMode,
+    baResult:           pendingReview,
+    setBaResult:        setPendingReview,
+    selectedFormat:     pendingFormat,
+    setSelectedFormat:  setPendingFormat,
+    qaVerdict,
+    setQaVerdict,
+    devVerdict,
+    setDevVerdict,
+    isRevising,
+    setIsRevising,
+    isApproving,
+    setIsApproving,
+    revisionCount,
+    setRevisionCount,
+    translationResult,
+    setTranslationResult,
+    selectedType:       inputMode,
+    setSelectedType:    setInputMode,
+    inputText:          bugText,
+    setInputText:       setBugText,
+    bugAffectedArea,
+    setBugAffectedArea,
+    bugSeverityHint,
+    setBugSeverityHint,
+    featureText,
+    setFeatureText,
+    featureFormat,
+    setFeatureFormat,
+  } = usePipelineStore()
 
-  const [inputMode, setInputMode] = useState<PipelineInputMode>('feature')
-  const [bugText, setBugText] = useState('')
-  const [bugAffectedArea, setBugAffectedArea] = useState('')
-  const [bugSeverityHint, setBugSeverityHint] = useState<Severity | null>(null)
+  // Reset in-flight loading states on page mount — can't resume API calls across navigation
+  useEffect(() => {
+    usePipelineStore.getState().setIsAnalyzing(false)
+    usePipelineStore.getState().setIsRevising(false)
+    usePipelineStore.getState().setIsApproving(false)
+  }, [])
 
   async function handleSubmit(text: string, format: Format) {
     setLoading(true)
@@ -294,7 +317,7 @@ export default function PipelinePage() {
             {([
               { m: 'feature', label: '✦ User Story' },
               { m: 'bug',     label: '🐛 Bug Report' },
-            ] as { m: PipelineInputMode; label: string }[]).map(({ m, label }) => (
+            ] as { m: typeof inputMode; label: string }[]).map(({ m, label }) => (
               <button
                 key={m}
                 onClick={() => setInputMode(m)}
@@ -317,11 +340,53 @@ export default function PipelinePage() {
           </div>
         </div>
 
+        {/* Done banner with reset */}
+        {mode === 'done' && (
+          <div style={{
+            background: "#EAF3DE",
+            border: "1px solid #b3d98a",
+            borderRadius: 8,
+            padding: "12px 16px",
+            marginBottom: 16,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 12,
+          }}>
+            <span style={{ fontSize: 13, color: "#27500A", fontWeight: 500 }}>
+              ✅ Ticket created and added to backlog
+            </span>
+            <button
+              onClick={() => usePipelineStore.getState().reset()}
+              style={{
+                background: "#534AB7",
+                color: "#fff",
+                border: "none",
+                borderRadius: 8,
+                padding: "7px 14px",
+                fontSize: 12,
+                fontWeight: 500,
+                cursor: "pointer",
+                fontFamily: "inherit",
+                flexShrink: 0,
+              }}
+            >
+              + Start New Requirement
+            </button>
+          </div>
+        )}
+
         {inputMode === 'feature' ? (
           <RequirementInput
             onSubmit={handleSubmit}
             loading={loading}
-            onTextChange={() => setTranslationResult(null)}
+            onTextChange={(text, fmt) => {
+              setTranslationResult(null)
+              setFeatureText(text)
+              setFeatureFormat(fmt)
+            }}
+            initialText={featureText}
+            initialFormat={featureFormat}
           />
         ) : (
           <div style={{
