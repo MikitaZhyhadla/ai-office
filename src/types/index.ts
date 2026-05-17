@@ -16,10 +16,12 @@ export interface TestCase {
   type:           'positive' | 'negative' | 'boundary'
 }
 
-export type Format = 'gwt' | 'classic'
+export type Format = 'gwt' | 'classic' | 'bug'
 export type Priority = 'high' | 'medium' | 'low'
 export type AgentStatus = 'idle' | 'thinking' | 'working'
 export type KanbanColumn = 'todo' | 'inprog' | 'review' | 'done'
+export type TicketType = 'feature' | 'bug'
+export type Severity = 'critical' | 'major' | 'minor'
 
 export interface TicketHistoryEntry {
   id: string
@@ -55,6 +57,15 @@ export interface ClassicRequirement {
   priority: Priority
   notes?: string
 }
+export interface BugReport {
+  title:            string
+  severity:         Severity
+  stepsToReproduce: string[]
+  expectedBehavior: string
+  actualBehavior:   string
+  affectedArea:     string
+}
+
 export type RequirementData = GWTRequirement | ClassicRequirement
 export interface Ticket {
   id: string
@@ -73,6 +84,9 @@ export interface Ticket {
   pushedTo?: 'jira' | 'azure' | null
   pushedAt?: string
   pushedUrl?: string
+  ticketType?: TicketType
+  bugReport?:  BugReport
+  severity?:   Severity
 }
 export interface Agent {
   id: string

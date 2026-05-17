@@ -5,6 +5,7 @@ import { useSettingsStore } from "@/store/useSettingsStore"
 import { pushTicketToJira, pushTicketToAzure } from "@/lib/pushTicket"
 import { DoDChecklistModal } from "./DoDChecklistModal"
 import { TestCasePanel } from "./TestCasePanel"
+import { BugReportView } from "./BugReportView"
 import type { GWTRequirement, ClassicRequirement, KanbanColumn, TicketHistoryEntry } from "@/types"
 
 interface TicketModalProps {
@@ -180,6 +181,12 @@ export function TicketModal({ ticketId, onClose }: TicketModalProps) {
                          background:"#EEEDFE", color:"#3C3489", marginRight:14, flexShrink:0 }}>
             {ticket.id}
           </span>
+          {ticket.ticketType === 'bug' && (
+            <span style={{ fontSize:10, fontWeight:600, padding:"2px 8px", borderRadius:10,
+                           background:"#FCEBEB", color:"#791F1F", marginRight:10, flexShrink:0 }}>
+              🐛 Bug
+            </span>
+          )}
           <span style={{ fontSize:16, fontWeight:600, flex:1, lineHeight:1.3 }}>{ticket.title}</span>
           <button onClick={onClose}
             style={{ background:"none", border:"none", cursor:"pointer", color:"#888",
@@ -196,11 +203,20 @@ export function TicketModal({ ticketId, onClose }: TicketModalProps) {
                          background:prioBg, color:prioColor }}>
             {ticket.priority}
           </span>
-          <span style={{ fontSize:10, fontWeight:500, padding:"3px 9px", borderRadius:20,
-                         background: ticket.format === "gwt" ? "#EEEDFE" : "#FAEEDA",
-                         color: ticket.format === "gwt" ? "#3C3489" : "#854F0B" }}>
-            {ticket.format.toUpperCase()}
-          </span>
+          {ticket.ticketType !== 'bug' && (
+            <span style={{ fontSize:10, fontWeight:500, padding:"3px 9px", borderRadius:20,
+                           background: ticket.format === "gwt" ? "#EEEDFE" : "#FAEEDA",
+                           color: ticket.format === "gwt" ? "#3C3489" : "#854F0B" }}>
+              {ticket.format.toUpperCase()}
+            </span>
+          )}
+          {ticket.ticketType === 'bug' && ticket.severity && (
+            <span style={{ fontSize:10, fontWeight:500, padding:"3px 9px", borderRadius:20,
+                           background: ticket.severity === 'critical' ? "#FCEBEB" : ticket.severity === 'major' ? "#FAEEDA" : "#f0f0f0",
+                           color: ticket.severity === 'critical' ? "#791F1F" : ticket.severity === 'major' ? "#854F0B" : "#666" }}>
+              {ticket.severity.charAt(0).toUpperCase() + ticket.severity.slice(1)}
+            </span>
+          )}
           <span style={{ fontSize:10, fontWeight:600, padding:"3px 9px", borderRadius:20,
                          background:"#f0eff7", color:"#534AB7", border:"1px solid #ddd" }}>
             {ticket.points} SP
@@ -252,54 +268,60 @@ export function TicketModal({ ticketId, onClose }: TicketModalProps) {
           {/* Requirements tab */}
           {activeTab === "requirements" && (
             <div>
-              {ticket.data.format === "gwt" && (ticket.data as GWTRequirement).scenarios.map((sc, i) => (
-                <div key={i} style={{ marginBottom:16 }}>
-                  <div style={{ fontSize:11, fontWeight:500, color:"#888", marginBottom:6 }}>
-                    Scenario {i + 1}: {sc.name}
-                  </div>
-                  <div style={{ background:"#f8f8fc", borderLeft:"3px solid #7F77DD",
-                                borderRadius:"0 8px 8px 0", padding:"12px 15px",
-                                fontSize:12, lineHeight:2, fontFamily:"monospace" }}>
-                    <span style={{ color:"#0F6E56", fontWeight:700 }}>Given </span>{sc.given}<br/>
-                    <span style={{ color:"#854F0B", fontWeight:700 }}>When </span>{sc.when}<br/>
-                    <span style={{ color:"#27500A", fontWeight:700 }}>Then </span>{sc.then}
-                  </div>
-                </div>
-              ))}
-
-              {ticket.data.format === "classic" && (() => {
-                const c = ticket.data as ClassicRequirement
-                const Section = ({ label, items }: { label: string; items: string[] }) => (
-                  <div style={{ marginBottom:14 }}>
-                    <div style={{ fontSize:10, fontWeight:600, color:"#aaa", textTransform:"uppercase",
-                                  letterSpacing:"0.05em", marginBottom:6 }}>{label}</div>
-                    {items.map((item, i) => (
-                      <div key={i} style={{ fontSize:12, color:"#444", lineHeight:1.7, paddingLeft:4 }}>
-                        {i + 1}. {item}
+              {ticket.ticketType === 'bug' && ticket.bugReport ? (
+                <BugReportView bugReport={ticket.bugReport} />
+              ) : (
+                <>
+                  {ticket.data.format === "gwt" && (ticket.data as GWTRequirement).scenarios.map((sc, i) => (
+                    <div key={i} style={{ marginBottom:16 }}>
+                      <div style={{ fontSize:11, fontWeight:500, color:"#888", marginBottom:6 }}>
+                        Scenario {i + 1}: {sc.name}
                       </div>
-                    ))}
-                  </div>
-                )
-                return (
-                  <>
-                    <div style={{ marginBottom:14 }}>
-                      <div style={{ fontSize:10, fontWeight:600, color:"#aaa", textTransform:"uppercase",
-                                    letterSpacing:"0.05em", marginBottom:6 }}>Objective</div>
-                      <div style={{ fontSize:12, color:"#444", lineHeight:1.7 }}>{c.objective}</div>
+                      <div style={{ background:"#f8f8fc", borderLeft:"3px solid #7F77DD",
+                                    borderRadius:"0 8px 8px 0", padding:"12px 15px",
+                                    fontSize:12, lineHeight:2, fontFamily:"monospace" }}>
+                        <span style={{ color:"#0F6E56", fontWeight:700 }}>Given </span>{sc.given}<br/>
+                        <span style={{ color:"#854F0B", fontWeight:700 }}>When </span>{sc.when}<br/>
+                        <span style={{ color:"#27500A", fontWeight:700 }}>Then </span>{sc.then}
+                      </div>
                     </div>
-                    <Section label="Functional Requirements" items={c.functional_requirements} />
-                    <Section label="Non-Functional Requirements" items={c.non_functional_requirements} />
-                    <Section label="Acceptance Criteria" items={c.acceptance_criteria} />
-                    {c.out_of_scope.length > 0 && <Section label="Out of Scope" items={c.out_of_scope} />}
-                  </>
-                )
-              })()}
+                  ))}
 
-              {ticket.data.notes && (
-                <div style={{ marginTop:14, padding:"10px 14px", background:"#fffbf0",
-                              borderRadius:8, border:"1px solid #f0e0b0", fontSize:12, color:"#666" }}>
-                  <span style={{ fontWeight:600, color:"#854F0B" }}>Notes: </span>{ticket.data.notes}
-                </div>
+                  {ticket.data.format === "classic" && (() => {
+                    const c = ticket.data as ClassicRequirement
+                    const Section = ({ label, items }: { label: string; items: string[] }) => (
+                      <div style={{ marginBottom:14 }}>
+                        <div style={{ fontSize:10, fontWeight:600, color:"#aaa", textTransform:"uppercase",
+                                      letterSpacing:"0.05em", marginBottom:6 }}>{label}</div>
+                        {items.map((item, i) => (
+                          <div key={i} style={{ fontSize:12, color:"#444", lineHeight:1.7, paddingLeft:4 }}>
+                            {i + 1}. {item}
+                          </div>
+                        ))}
+                      </div>
+                    )
+                    return (
+                      <>
+                        <div style={{ marginBottom:14 }}>
+                          <div style={{ fontSize:10, fontWeight:600, color:"#aaa", textTransform:"uppercase",
+                                        letterSpacing:"0.05em", marginBottom:6 }}>Objective</div>
+                          <div style={{ fontSize:12, color:"#444", lineHeight:1.7 }}>{c.objective}</div>
+                        </div>
+                        <Section label="Functional Requirements" items={c.functional_requirements} />
+                        <Section label="Non-Functional Requirements" items={c.non_functional_requirements} />
+                        <Section label="Acceptance Criteria" items={c.acceptance_criteria} />
+                        {c.out_of_scope.length > 0 && <Section label="Out of Scope" items={c.out_of_scope} />}
+                      </>
+                    )
+                  })()}
+
+                  {ticket.data.notes && (
+                    <div style={{ marginTop:14, padding:"10px 14px", background:"#fffbf0",
+                                  borderRadius:8, border:"1px solid #f0e0b0", fontSize:12, color:"#666" }}>
+                      <span style={{ fontWeight:600, color:"#854F0B" }}>Notes: </span>{ticket.data.notes}
+                    </div>
+                  )}
+                </>
               )}
             </div>
           )}
