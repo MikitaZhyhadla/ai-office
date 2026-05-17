@@ -6,6 +6,7 @@ import { pushTicketToJira, pushTicketToAzure } from "@/lib/pushTicket"
 import { DoDChecklistModal } from "./DoDChecklistModal"
 import { TestCasePanel } from "./TestCasePanel"
 import { BugReportView } from "./BugReportView"
+import { TechNotesPanel } from "./TechNotesPanel"
 import type { GWTRequirement, ClassicRequirement, KanbanColumn, TicketHistoryEntry } from "@/types"
 
 interface TicketModalProps {
@@ -13,7 +14,7 @@ interface TicketModalProps {
   onClose: () => void
 }
 
-type Tab = "requirements" | "verdicts" | "testcases" | "history"
+type Tab = "requirements" | "verdicts" | "testcases" | "technotes" | "history"
 
 const NEXT_STATUS: Record<KanbanColumn, KanbanColumn | null> = {
   todo: "inprog",
@@ -235,7 +236,7 @@ export function TicketModal({ ticketId, onClose }: TicketModalProps) {
 
         {/* ── Tabs ── */}
         <div style={{ display:"flex", padding:"0 22px", borderBottom:"1px solid #e8e8f0", flexShrink:0 }}>
-          {(["requirements","verdicts","testcases","history"] as Tab[]).map(tab => (
+          {(["requirements","verdicts","testcases","technotes","history"] as Tab[]).map(tab => (
             <button key={tab} onClick={() => setActiveTab(tab)}
               style={{ background:"none", border:"none", cursor:"pointer", padding:"12px 14px",
                        fontSize:13, fontWeight:500, fontFamily:"inherit",
@@ -252,6 +253,20 @@ export function TicketModal({ ticketId, onClose }: TicketModalProps) {
                       borderRadius: 10, fontWeight: 600,
                     }}>
                       {tcCount}
+                    </span>
+                  )}
+                </>
+              ) : tab === "technotes" ? (
+                <>
+                  <span>Tech Notes</span>
+                  {ticket.techNotes && (
+                    <span style={{
+                      background: '#E1F5EE', color: '#085041',
+                      fontSize: 9, padding: '1px 5px',
+                      borderRadius: 10, fontWeight: 600,
+                      marginLeft: 3,
+                    }}>
+                      ✓
                     </span>
                   )}
                 </>
@@ -417,6 +432,14 @@ export function TicketModal({ ticketId, onClose }: TicketModalProps) {
           {/* Test Cases tab */}
           {activeTab === "testcases" && (
             <TestCasePanel ticketId={ticketId} ticketTitle={ticket.title} />
+          )}
+
+          {/* Tech Notes tab */}
+          {activeTab === "technotes" && (
+            <TechNotesPanel
+              ticket={ticket}
+              onGenerated={(notes) => updateTicket(ticket.id, { techNotes: notes })}
+            />
           )}
 
           {/* History tab */}

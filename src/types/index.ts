@@ -66,6 +66,14 @@ export interface BugReport {
   affectedArea:     string
 }
 
+export interface TechNotes {
+  proposedStack:       string[]
+  implementationSteps: string[]
+  edgeCases:           string[]
+  patterns:            string[]
+  estimateNote:        string
+}
+
 export type RequirementData = GWTRequirement | ClassicRequirement
 export interface Ticket {
   id: string
@@ -87,6 +95,7 @@ export interface Ticket {
   ticketType?: TicketType
   bugReport?:  BugReport
   severity?:   Severity
+  techNotes?:  TechNotes
 }
 export interface Agent {
   id: string
