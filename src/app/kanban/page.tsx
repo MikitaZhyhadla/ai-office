@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Topbar } from "@/components/shared/Topbar"
 import { KanbanColumn } from "@/components/kanban/KanbanColumn"
 import { KanbanCard } from "@/components/kanban/KanbanCard"
+import { SprintControls } from "@/components/kanban/SprintControls"
 import { DoDChecklistModal } from "@/components/shared/DoDChecklistModal"
 import { useAppStore } from "@/store/useAppStore"
 import { useAuthStore } from "@/store/useAuthStore"
@@ -17,13 +18,13 @@ export default function KanbanPage() {
   const { kanban, moveToKanban, sprints, setTestCases, setGeneratingTc,
           setAgentStatus, appendTicketHistory } = useAppStore()
   const currentUser = useAuthStore(s => s.currentUser)
-  const sprint = sprints[0]
+  const activeSprint = sprints.find(s => s.status === 'active') ?? null
   const [activeTicket, setActiveTicket] = useState<Ticket | null>(null)
   const [dodModalOpen, setDodModalOpen] = useState(false)
   const [pendingDoneTicket, setPendingDoneTicket] = useState<Ticket | null>(null)
 
   const allTickets = Object.values(kanban).flat()
-  const sprintTicketIds = new Set(sprint.ticketIds)
+  const sprintTicketIds = activeSprint ? new Set(activeSprint.ticketIds) : new Set<string>()
   const myKanban = {
     todo:   kanban.todo.filter(t => t.userId === currentUser?.username && sprintTicketIds.has(t.id)),
     inprog: kanban.inprog.filter(t => t.userId === currentUser?.username && sprintTicketIds.has(t.id)),
@@ -133,15 +134,19 @@ export default function KanbanPage() {
       <main style={{ padding:22, maxWidth:1100, margin:"0 auto" }}>
         <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:20 }}>
           <span style={{ fontSize:16, fontWeight:600 }}>Kanban Board</span>
-          <span style={{ fontSize:10, fontWeight:500, padding:"3px 9px", borderRadius:20,
-            background:"#EEEDFE", color:"#3C3489" }}>
-            {sprint.name}
-          </span>
+          {activeSprint && (
+            <span style={{ fontSize:10, fontWeight:500, padding:"3px 9px", borderRadius:20,
+              background:"#EEEDFE", color:"#3C3489" }}>
+              {activeSprint.name}
+            </span>
+          )}
           <span style={{ fontSize:10, fontWeight:500, padding:"3px 9px", borderRadius:20,
             background:"#f0eff7", color:"#534AB7", border:"1px solid #e0e0f0" }}>
             {totalSP} SP committed
           </span>
         </div>
+
+        <SprintControls />
 
         <DndContext collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
           <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:12 }}>

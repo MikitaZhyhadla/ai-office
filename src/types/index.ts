@@ -115,6 +115,8 @@ export interface Ticket {
   moscowJustification?: string
   suggestedSP?:         number
   inSprint?:            boolean
+  resolvedInSprint?: string
+  resolvedAt?:       string
 }
 export interface Agent {
   id: string
@@ -129,8 +131,9 @@ export interface Sprint {
   startDate: string
   endDate: string
   ticketIds: string[]
-  status?: 'active' | 'closed'
+  status: 'active' | 'closed'
   closedAt?: string
+  velocity?: number
 }
 
 export interface RetroReport {
