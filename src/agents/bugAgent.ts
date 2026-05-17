@@ -1,4 +1,5 @@
 import { callAgent } from "./callAgent"
+import { stripJsonFences } from '@/lib/parseJson'
 import type { BugReport, Severity } from "@/types"
 
 const SYSTEM = `You are Alice BA, a senior business analyst specialising in software quality.
@@ -38,10 +39,9 @@ Return a JSON object with this exact schema:
 
   try {
     const raw = await callAgent(SYSTEM, userPrompt)
-    const clean = raw.replace(/```json|```/g, '').trim()
-    const parsed = JSON.parse(clean) as BugReport
-    return parsed
-  } catch {
+    return JSON.parse(stripJsonFences(raw)) as BugReport
+  } catch (e) {
+    console.error('bugAgent raw response:', e)
     throw new Error('BugAgent: failed to parse response')
   }
 }

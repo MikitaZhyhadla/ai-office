@@ -1,4 +1,5 @@
 import { callAgent } from "./callAgent"
+import { stripJsonFences } from '@/lib/parseJson'
 import type { Ticket, TechNotes } from "@/types"
 
 const SYSTEM = `You are Bob Dev, a senior full-stack developer working on AI Office — a requirements pipeline tool.
@@ -50,10 +51,9 @@ Return a JSON object with this exact schema:
 export async function runDevTechNotesAgent(ticket: Ticket, projectDescription: string): Promise<TechNotes> {
   try {
     const raw = await callAgent(SYSTEM, buildUserPrompt(ticket, projectDescription))
-    const clean = raw.replace(/```json|```/g, '').trim()
-    const parsed = JSON.parse(clean) as TechNotes
-    return parsed
-  } catch {
+    return JSON.parse(stripJsonFences(raw)) as TechNotes
+  } catch (e) {
+    console.error('devTechNotesAgent raw response:', e)
     throw new Error('DevTechNotesAgent: failed to parse response')
   }
 }

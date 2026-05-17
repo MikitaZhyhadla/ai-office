@@ -1,4 +1,5 @@
 import { callAgent } from "./callAgent"
+import { stripJsonFences } from '@/lib/parseJson'
 
 export interface DevVerdict {
   feasible: boolean
@@ -20,5 +21,10 @@ Return ONLY valid JSON:
 
 export async function devAgent(requirement: string): Promise<DevVerdict> {
   const text = await callAgent(SYSTEM, `Check feasibility:\n\n${requirement}`)
-  return JSON.parse(text) as DevVerdict
+  try {
+    return JSON.parse(stripJsonFences(text)) as DevVerdict
+  } catch (e) {
+    console.error('devAgent raw response:', text)
+    throw new Error('devAgent: failed to parse response')
+  }
 }

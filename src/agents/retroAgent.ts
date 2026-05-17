@@ -1,4 +1,5 @@
 import { callAgent } from "./callAgent"
+import { stripJsonFences } from '@/lib/parseJson'
 import type { RetroReport } from "@/types"
 
 interface SprintAgentInput {
@@ -73,11 +74,10 @@ agentInsights: A 3-5 sentence paragraph with your overall assessment of the spri
 export async function runRetroAgent(sprintData: SprintAgentInput): Promise<RetroReport> {
   const userPrompt = buildUserPrompt(sprintData)
   const raw = await callAgent(SYSTEM, userPrompt)
-  const clean = raw.replace(/```json|```/g, '').trim()
   try {
-    const parsed = JSON.parse(clean) as RetroReport
-    return parsed
-  } catch {
+    return JSON.parse(stripJsonFences(raw)) as RetroReport
+  } catch (e) {
+    console.error('retroAgent raw response:', raw)
     throw new Error('RetroAgent: failed to parse response')
   }
 }

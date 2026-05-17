@@ -1,4 +1,5 @@
 import { callAgent } from "./callAgent"
+import { stripJsonFences } from '@/lib/parseJson'
 import type { TestCase, GWTRequirement, ClassicRequirement, Format } from "@/types"
 
 const SYSTEM = `You are a QA Lead agent. Generate comprehensive test cases for a software requirement.
@@ -46,7 +47,11 @@ Requirement:
 ${reqText}`
 
   const text = await callAgent(SYSTEM, userMessage)
-  const clean = text.replace(/```json|```/g, '').trim()
-  const parsed = JSON.parse(clean) as { testCases: TestCase[] }
-  return parsed.testCases
+  try {
+    const parsed = JSON.parse(stripJsonFences(text)) as { testCases: TestCase[] }
+    return parsed.testCases
+  } catch (e) {
+    console.error('qaTestCaseAgent raw response:', text)
+    throw new Error('qaTestCaseAgent: failed to parse response')
+  }
 }
