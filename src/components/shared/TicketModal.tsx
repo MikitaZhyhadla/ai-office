@@ -7,6 +7,7 @@ import { DoDChecklistModal } from "./DoDChecklistModal"
 import { TestCasePanel } from "./TestCasePanel"
 import { BugReportView } from "./BugReportView"
 import { TechNotesPanel } from "./TechNotesPanel"
+import { MoSCoWBadge } from "./MoSCoWBadge"
 import type { GWTRequirement, ClassicRequirement, KanbanColumn, TicketHistoryEntry } from "@/types"
 
 interface TicketModalProps {
@@ -230,6 +231,15 @@ export function TicketModal({ ticketId, onClose }: TicketModalProps) {
             <span style={{ fontSize:10, fontWeight:500, padding:"3px 9px", borderRadius:20,
                            background:"#f0f8ff", color:"#1a6fa8", border:"1px solid #bde0f7" }}>
               {sprint.name}
+            </span>
+          )}
+          {ticket.moscow && (
+            <MoSCoWBadge category={ticket.moscow} justification={ticket.moscowJustification} />
+          )}
+          {ticket.suggestedSP !== undefined && ticket.suggestedSP !== ticket.points && (
+            <span style={{ fontSize:'10px', color:'#854F0B', background:'#FAEEDA',
+                           padding:'2px 7px', borderRadius:'10px', fontWeight:500 }}>
+              AI suggests: {ticket.suggestedSP} SP
             </span>
           )}
         </div>

@@ -74,6 +74,21 @@ export interface TechNotes {
   estimateNote:        string
 }
 
+export type MoSCoWCategory = 'must' | 'should' | 'could' | 'wont'
+
+export interface PrioritizationResult {
+  ticketId:      string
+  moscow:        MoSCoWCategory
+  justification: string
+  suggestedSP:   number
+}
+
+export interface PrioritizationReport {
+  results:     PrioritizationResult[]
+  summary:     string
+  generatedAt: string
+}
+
 export type RequirementData = GWTRequirement | ClassicRequirement
 export interface Ticket {
   id: string
@@ -96,6 +111,9 @@ export interface Ticket {
   bugReport?:  BugReport
   severity?:   Severity
   techNotes?:  TechNotes
+  moscow?:              MoSCoWCategory
+  moscowJustification?: string
+  suggestedSP?:         number
 }
 export interface Agent {
   id: string

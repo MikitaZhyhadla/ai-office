@@ -10,10 +10,11 @@ import { ExportButton } from "@/components/shared/ExportButton"
 import { CreateTicketModal } from "@/components/backlog/CreateTicketModal"
 import { RetroModal } from "@/components/backlog/RetroModal"
 import { runRetroAgent } from "@/agents/retroAgent"
+import { runPrioritizationAgent } from "@/agents/prioritizationAgent"
 import type { Ticket, RetroReport } from "@/types"
 
 export default function BacklogPage() {
-  const { tickets, sprints, addTicket, closeSprintWithRetro } = useAppStore()
+  const { tickets, sprints, addTicket, updateTicket, closeSprintWithRetro } = useAppStore()
   const currentUser = useAuthStore(s => s.currentUser)
   const { projectName, projectDescription } = useSettingsStore()
   const [showCreateModal, setShowCreateModal] = useState(false)
@@ -22,6 +23,10 @@ export default function BacklogPage() {
   const [retroReport, setRetroReport] = useState<RetroReport | null>(null)
   const [avgCycleTimeDays, setAvgCycleTimeDays] = useState<number | null>(null)
 
+  const [isPrioritizing, setIsPrioritizing] = useState(false)
+  const [prioritizationSummary, setPrioritizationSummary] = useState<string | null>(null)
+  const [prioritizationError, setPrioritizationError] = useState<string | null>(null)
+
   const sprint = sprints[0]
   const myTickets = tickets.filter(t => t.userId === currentUser?.username)
   const sprintTickets = myTickets.filter(t => sprint.ticketIds.includes(t.id))
@@ -29,6 +34,48 @@ export default function BacklogPage() {
 
   function handleCreateTicket(ticket: Ticket) {
     addTicket(ticket)
+  }
+
+  async function handlePrioritize() {
+    if (isPrioritizing || backlogTickets.length === 0) return
+
+    setIsPrioritizing(true)
+    setPrioritizationSummary(null)
+    setPrioritizationError(null)
+
+    try {
+      const { projectDescription: desc } = useSettingsStore.getState()
+
+      const activeSprint = sprints[0]
+      const sprintName = activeSprint?.name ?? 'Current Sprint'
+      const sprintDates = activeSprint
+        ? `${activeSprint.startDate ?? 'TBD'} – ${activeSprint.endDate ?? 'TBD'}`
+        : 'Dates not set'
+
+      const totalSprintSP = backlogTickets.reduce((sum, t) => sum + (t.points ?? 0), 0)
+
+      const report = await runPrioritizationAgent(
+        backlogTickets,
+        sprintName,
+        sprintDates,
+        desc,
+        totalSprintSP
+      )
+
+      report.results.forEach(result => {
+        updateTicket(result.ticketId, {
+          moscow:              result.moscow,
+          moscowJustification: result.justification,
+          suggestedSP:         result.suggestedSP,
+        })
+      })
+
+      setPrioritizationSummary(report.summary)
+    } catch (err) {
+      setPrioritizationError(err instanceof Error ? err.message : 'Unknown error')
+    } finally {
+      setIsPrioritizing(false)
+    }
   }
 
   async function handleCloseSprintAndRetro() {
@@ -122,6 +169,35 @@ export default function BacklogPage() {
           <div style={{ marginLeft:"auto", display:"flex", gap:8, alignItems:"center" }}>
             <ExportButton />
             <button
+              onClick={handlePrioritize}
+              disabled={isPrioritizing || backlogTickets.length === 0}
+              title={backlogTickets.length === 0 ? "No tickets to prioritize" : undefined}
+              style={{
+                background: isPrioritizing || backlogTickets.length === 0 ? "#a09de0" : "#534AB7",
+                color: "#fff",
+                border: "none",
+                borderRadius: 8,
+                padding: "8px 16px",
+                fontSize: 12,
+                fontWeight: 500,
+                cursor: isPrioritizing || backlogTickets.length === 0 ? "not-allowed" : "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                fontFamily: "inherit",
+                opacity: backlogTickets.length === 0 ? 0.6 : 1,
+              }}
+            >
+              {isPrioritizing ? (
+                <>
+                  <span style={{ display:"inline-block", animation:"spin 1s linear infinite" }}>⟳</span>
+                  Prioritizing...
+                </>
+              ) : (
+                '✦ AI Prioritize Backlog'
+              )}
+            </button>
+            <button
               onClick={() => setShowCreateModal(true)}
               style={{
                 background: "#534AB7",
@@ -142,6 +218,51 @@ export default function BacklogPage() {
             </button>
           </div>
         </div>
+
+        {/* Success banner */}
+        {prioritizationSummary && (
+          <div style={{
+            background: "linear-gradient(135deg, #EEEDFE, #f8f0ff)",
+            border: "1px solid #d4c8f0",
+            borderRadius: 8,
+            padding: "10px 14px",
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            fontSize: 12,
+            color: "#534AB7",
+            marginBottom: 14,
+          }}>
+            <span style={{ fontWeight: 700, flexShrink: 0 }}>✦ Alice BA · MoSCoW applied</span>
+            <span style={{ color: "#555", flex: 1 }}>{prioritizationSummary}</span>
+            <button
+              onClick={() => setPrioritizationSummary(null)}
+              style={{ background:"none", border:"none", color:"#aaa", cursor:"pointer", fontSize:14, padding:0, lineHeight:1 }}
+            >✕</button>
+          </div>
+        )}
+
+        {/* Error banner */}
+        {prioritizationError && (
+          <div style={{
+            background: "#FEF2F2",
+            border: "1px solid #FCA5A5",
+            borderRadius: 8,
+            padding: "10px 14px",
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            fontSize: 12,
+            color: "#791F1F",
+            marginBottom: 14,
+          }}>
+            <span style={{ flex: 1 }}>⚠ Prioritization failed: {prioritizationError}</span>
+            <button
+              onClick={() => setPrioritizationError(null)}
+              style={{ background:"none", border:"none", color:"#aaa", cursor:"pointer", fontSize:14, padding:0, lineHeight:1 }}
+            >✕</button>
+          </div>
+        )}
 
         <SprintPanel
           sprint={sprint}

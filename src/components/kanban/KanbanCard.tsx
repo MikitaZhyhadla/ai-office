@@ -3,6 +3,7 @@ import { useSortable } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
 import { useAppStore } from "@/store/useAppStore"
 import type { Ticket } from "@/types"
+import { MoSCoWBadge } from "@/components/shared/MoSCoWBadge"
 
 export function KanbanCard({ ticket }: { ticket: Ticket }) {
   const setSelectedTicket = useAppStore(s => s.setSelectedTicket)
@@ -104,7 +105,7 @@ export function KanbanCard({ ticket }: { ticket: Ticket }) {
       </div>
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:4 }}>
         <span style={{ fontSize:10, color:"#aaa", fontFamily:"monospace" }}>{ticket.id}</span>
-        <div style={{ display:"flex", gap:5, alignItems:"center" }}>
+        <div style={{ display:"flex", gap:5, alignItems:"center", flexWrap:"wrap" }}>
           {isBug && ticket.severity && (
             <span style={{ fontSize:10, fontWeight:500, padding:"2px 7px", borderRadius:20,
               background: severityBg, color: severityColor }}>
@@ -115,6 +116,9 @@ export function KanbanCard({ ticket }: { ticket: Ticket }) {
             background:priorityBg, color:priorityColor }}>
             {ticket.priority}
           </span>
+          {ticket.moscow && (
+            <MoSCoWBadge category={ticket.moscow} justification={ticket.moscowJustification} />
+          )}
         </div>
       </div>
 
