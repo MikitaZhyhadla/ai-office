@@ -43,6 +43,7 @@ interface AppState {
   closeSprintWithRetro: (sprintId: string, retro: RetroReport) => void
   createSprint: (name: string, startDate: string, endDate: string) => void
   closeSprint: (sprintId: string) => { resolvedCount: number; returnedCount: number; velocity: number }
+  reopenTicket: (ticketId: string) => void
   resetStore: () => void
 }
 
@@ -224,6 +225,19 @@ export const useAppStore = create<AppState>()(
             : s
         )
       })),
+      reopenTicket: (ticketId) => set(s => {
+        const updatedTickets = s.tickets.map(t =>
+          t.id === ticketId
+            ? { ...t, resolvedInSprint: undefined, resolvedAt: undefined, inSprint: false, status: 'todo' as const, sprintId: undefined }
+            : t
+        )
+        const reopened = updatedTickets.find(t => t.id === ticketId)
+        const cols: KanbanColumn[] = ['todo', 'inprog', 'review', 'done']
+        const nextKanban = { ...s.kanban }
+        cols.forEach(c => { nextKanban[c] = nextKanban[c].filter(t => t.id !== ticketId) })
+        if (reopened) nextKanban.todo = [...nextKanban.todo, reopened]
+        return { tickets: updatedTickets, kanban: nextKanban }
+      }),
       resetStore: () => set({
         tickets: [],
         kanban: { todo: [], inprog: [], review: [], done: [] },

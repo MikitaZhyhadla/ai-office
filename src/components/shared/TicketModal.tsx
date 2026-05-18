@@ -50,6 +50,7 @@ export function TicketModal({ ticketId, onClose }: TicketModalProps) {
   const removeTicket         = useAppStore(s => s.removeTicket)
   const updateTicket         = useAppStore(s => s.updateTicket)
   const appendTicketHistory  = useAppStore(s => s.appendTicketHistory)
+  const reopenTicket         = useAppStore(s => s.reopenTicket)
   const testCases = useAppStore(s => s.testCases)
   const tcCount   = testCases[ticketId]?.length ?? 0
 
@@ -60,6 +61,7 @@ export function TicketModal({ ticketId, onClose }: TicketModalProps) {
   const isAzureConfigured = azure.enabled && !!azure.orgUrl  && !!azure.project   && !!azure.patToken
 
   const [activeTab, setActiveTab] = useState<Tab>("requirements")
+  const [isReopening, setIsReopening] = useState(false)
   const [jiraPushState,  setJiraPushState]  = useState<"idle" | "loading" | "error">("idle")
   const [azurePushState, setAzurePushState] = useState<"idle" | "loading" | "error">("idle")
   const [jiraError,  setJiraError]  = useState<string | null>(null)
@@ -76,6 +78,19 @@ export function TicketModal({ ticketId, onClose }: TicketModalProps) {
   }, [handleKey])
 
   if (!ticket) return null
+
+  const isResolved = !!ticket.resolvedInSprint
+  const getSprintName = (sprintId: string) =>
+    sprints.find(s => s.id === sprintId)?.name ?? sprintId
+
+  const handleReopen = () => {
+    setIsReopening(true)
+    reopenTicket(ticket.id)
+    setTimeout(() => {
+      onClose()
+      setIsReopening(false)
+    }, 300)
+  }
 
   const sprint = ticket.sprintId ? sprints.find(s => s.id === ticket.sprintId) : null
   const nextSt  = NEXT_STATUS[ticket.status]
@@ -289,6 +304,34 @@ export function TicketModal({ ticketId, onClose }: TicketModalProps) {
 
         {/* ── Body ── */}
         <div style={{ flex:1, overflowY:"auto", padding:22 }}>
+
+          {/* Resolved banner */}
+          {isResolved && (
+            <div style={{
+              background: '#E1F5EE', border: '1px solid #A7F3D0',
+              borderRadius: 8, padding: '10px 14px', marginBottom: 16,
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            }}>
+              <span style={{ fontSize: 12, color: '#085041', fontWeight: 500 }}>
+                ✓ Resolved — completed in{' '}
+                <strong>{getSprintName(ticket.resolvedInSprint!)}</strong>
+                {ticket.resolvedAt ? ` on ${ticket.resolvedAt.split('T')[0]}` : ''}
+              </span>
+              <button
+                onClick={handleReopen}
+                disabled={isReopening}
+                style={{
+                  padding: '5px 14px', borderRadius: 6,
+                  border: '1.5px solid #27500A',
+                  background: 'none', color: '#27500A',
+                  cursor: isReopening ? 'not-allowed' : 'pointer',
+                  fontSize: 12, fontWeight: 600, flexShrink: 0,
+                }}
+              >
+                {isReopening ? 'Reopening…' : '↩ Reopen'}
+              </button>
+            </div>
+          )}
 
           {/* Requirements tab */}
           {activeTab === "requirements" && (
@@ -538,7 +581,7 @@ export function TicketModal({ ticketId, onClose }: TicketModalProps) {
 
           {/* Action row */}
           <div style={{ display:"flex", gap:8, padding:"14px 22px", flexWrap:"wrap" }}>
-            {nextSt && (
+            {nextSt && !isResolved && (
               <button onClick={handleMove}
                 style={{ background:"#534AB7", color:"#fff", border:"none", borderRadius:8,
                          padding:"8px 16px", fontSize:12, fontWeight:500, cursor:"pointer" }}>
@@ -617,11 +660,13 @@ export function TicketModal({ ticketId, onClose }: TicketModalProps) {
               </button>
             )}
 
-            <button onClick={handleDelete}
-              style={{ background:"none", border:"1.5px solid #f5b8b8", color:"#791F1F", borderRadius:8,
-                       padding:"8px 14px", fontSize:12, cursor:"pointer", marginLeft:"auto" }}>
-              🗑 Delete
-            </button>
+            {!isResolved && (
+              <button onClick={handleDelete}
+                style={{ background:"none", border:"1.5px solid #f5b8b8", color:"#791F1F", borderRadius:8,
+                         padding:"8px 14px", fontSize:12, cursor:"pointer", marginLeft:"auto" }}>
+                🗑 Delete
+              </button>
+            )}
           </div>
         </div>
       </div>

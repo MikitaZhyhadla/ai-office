@@ -6,6 +6,8 @@ export function ResolvedItemsSection() {
   const [isOpen, setIsOpen] = useState(false)
   const tickets = useAppStore(s => s.tickets)
   const sprints = useAppStore(s => s.sprints)
+  const setSelectedTicket = useAppStore(s => s.setSelectedTicket)
+  const reopenTicket = useAppStore(s => s.reopenTicket)
 
   const resolvedTickets = tickets.filter(t => !!t.resolvedInSprint)
 
@@ -52,7 +54,13 @@ export function ResolvedItemsSection() {
                 </div>
 
                 {sprintResolved.map(ticket => (
-                  <div key={ticket.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderBottom: '1px solid #f0f0f7', borderLeft: '3px solid #27500A' }}>
+                  <div
+                    key={ticket.id}
+                    onClick={() => setSelectedTicket(ticket.id)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderBottom: '1px solid #f0f0f7', borderLeft: '3px solid #27500A', cursor: 'pointer', background: 'transparent', transition: 'background 0.1s' }}
+                    onMouseEnter={e => { e.currentTarget.style.background = '#f5f5fa' }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+                  >
                     <div style={{ width: 3, height: 28, borderRadius: 2, background: ticket.priority === 'high' ? '#E24B4A' : ticket.priority === 'medium' ? '#EF9F27' : '#639922', flexShrink: 0 }} />
                     <span style={{ fontSize: 11, color: '#aaa', fontFamily: 'monospace', width: 72, flexShrink: 0 }}>{ticket.id}</span>
                     <span style={{ fontSize: 13, flex: 1 }}>{ticket.title}</span>
@@ -61,6 +69,21 @@ export function ResolvedItemsSection() {
                     </span>
                     <span style={{ fontSize: 10, background: '#f0eff7', color: '#534AB7', padding: '2px 8px', borderRadius: 5, fontWeight: 600 }}>{ticket.points} SP</span>
                     <span style={{ fontSize: 10, background: '#E1F5EE', color: '#085041', padding: '2px 8px', borderRadius: 10, fontWeight: 600 }}>Resolved</span>
+                    <button
+                      onClick={e => {
+                        e.stopPropagation()
+                        reopenTicket(ticket.id)
+                      }}
+                      style={{
+                        padding: '3px 10px', borderRadius: 6,
+                        border: '1px solid #27500A',
+                        background: 'none', color: '#27500A',
+                        cursor: 'pointer', fontSize: 11, fontWeight: 600,
+                        flexShrink: 0,
+                      }}
+                    >
+                      ↩ Reopen
+                    </button>
                   </div>
                 ))}
               </div>
