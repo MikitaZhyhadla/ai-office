@@ -23,11 +23,16 @@ export function TeamPanel() {
   const allUsers = useAuthStore(s => s.users)
   const currentUser = useAuthStore(s => s.currentUser)
 
-  // Only show users from the same project; backward compat for users without projectId
-  const users = allUsers.filter(u =>
-    !u.projectId ||
-    u.projectId === currentUser?.projectId
+  // Strict project scoping — only users with a matching projectId
+  const projectUsers = allUsers.filter(u =>
+    u.projectId && u.projectId === currentUser?.projectId
   )
+
+  // Ensure the logged-in user always appears in their own team panel
+  const currentUserInList = projectUsers.some(u => u.username === currentUser?.username)
+  const users = !currentUserInList && currentUser
+    ? [...projectUsers, currentUser]
+    : projectUsers
 
   const aiByDept = AI_AGENTS.reduce((acc, agent) => {
     const dept = DEPARTMENT_LABELS[agent.role] || agent.role
