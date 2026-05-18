@@ -311,11 +311,12 @@ export function TicketModal({ ticketId, onClose }: TicketModalProps) {
               background: '#E1F5EE', border: '1px solid #A7F3D0',
               borderRadius: 8, padding: '10px 14px', marginBottom: 16,
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              flexWrap: 'wrap', gap: 8,
             }}>
               <span style={{ fontSize: 12, color: '#085041', fontWeight: 500 }}>
-                ✓ Resolved — completed in{' '}
+                ✓ Resolved in{' '}
                 <strong>{getSprintName(ticket.resolvedInSprint!)}</strong>
-                {ticket.resolvedAt ? ` on ${ticket.resolvedAt.split('T')[0]}` : ''}
+                {ticket.resolvedAt ? ` · ${ticket.resolvedAt.split('T')[0]}` : ''}
               </span>
               <button
                 onClick={handleReopen}

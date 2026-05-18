@@ -193,8 +193,8 @@ export const useAppStore = create<AppState>()(
           const allSprintIds = new Set([...doneIds, ...unfinishedIds])
 
           const updatedTickets = s.tickets.map(t => {
-            if (doneIds.has(t.id)) return { ...t, resolvedInSprint: sprintId, resolvedAt: now, inSprint: false }
-            if (unfinishedIds.has(t.id)) return { ...t, inSprint: false, sprintId: undefined, status: 'todo' as const }
+            if (doneIds.has(t.id)) return { ...t, resolvedInSprint: sprintId, resolvedAt: now, inSprint: false, sprintId: undefined }
+            if (unfinishedIds.has(t.id)) return { ...t, inSprint: false, sprintId: undefined, status: 'todo' as const, resolvedInSprint: undefined, resolvedAt: undefined }
             return t
           })
 
