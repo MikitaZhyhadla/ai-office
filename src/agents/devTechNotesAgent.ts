@@ -1,6 +1,14 @@
 import { callAgent } from "./callAgent"
-import { stripJsonFences } from '@/lib/parseJson'
+import { safeParseJson } from '@/lib/parseJson'
 import type { Ticket, TechNotes } from "@/types"
+
+const FALLBACK_TECH_NOTES: TechNotes = {
+  proposedStack: [],
+  implementationSteps: [],
+  edgeCases: [],
+  patterns: [],
+  estimateNote: '',
+}
 
 const SYSTEM = `You are Bob Dev, a senior full-stack developer working on AI Office — a requirements pipeline tool.
 You receive a structured software requirement and generate concise, actionable technical implementation notes.
@@ -49,11 +57,10 @@ Return a JSON object with this exact schema:
 }
 
 export async function runDevTechNotesAgent(ticket: Ticket, projectDescription: string): Promise<TechNotes> {
-  try {
-    const raw = await callAgent(SYSTEM, buildUserPrompt(ticket, projectDescription))
-    return JSON.parse(stripJsonFences(raw)) as TechNotes
-  } catch (e) {
-    console.error('devTechNotesAgent raw response:', e)
-    throw new Error('DevTechNotesAgent: failed to parse response')
+  const raw = await callAgent(SYSTEM, buildUserPrompt(ticket, projectDescription), 4000)
+  const parsed = safeParseJson<TechNotes>(raw, FALLBACK_TECH_NOTES)
+  if (parsed === FALLBACK_TECH_NOTES) {
+    throw new Error('Generation incomplete — response was too long for this requirement.')
   }
+  return parsed
 }

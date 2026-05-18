@@ -189,33 +189,35 @@ export function AuthScreen() {
               Sign in
             </button>
 
-            {/* Test credentials box */}
-            <div
-              onClick={() => { setLoginUser('admin'); setLoginPass('demo1234') }}
-              style={{
-                background: '#f0eff7',
-                borderRadius: 8,
-                padding: '10px 12px',
-                marginTop: 16,
-                cursor: 'pointer',
-              }}
-            >
-              <div style={{
-                fontSize: 10, fontWeight: 600, color: '#534AB7',
-                textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 6,
-              }}>
-                Test Credentials
-              </div>
-              {[
-                { key: 'username', val: 'admin' },
-                { key: 'password', val: 'demo1234' },
-              ].map(({ key, val }) => (
-                <div key={key} style={{ display: 'flex', gap: 8, fontSize: 11, color: '#666', marginBottom: 3 }}>
-                  <span style={{ width: 70, color: '#888' }}>{key}</span>
-                  <span style={{ fontFamily: 'monospace', color: '#534AB7' }}>{val}</span>
+            {/* Test credentials box — development only */}
+            {process.env.NODE_ENV === 'development' && (
+              <div
+                onClick={() => { setLoginUser('admin'); setLoginPass('demo1234') }}
+                style={{
+                  background: '#f0eff7',
+                  borderRadius: 8,
+                  padding: '10px 12px',
+                  marginTop: 16,
+                  cursor: 'pointer',
+                }}
+              >
+                <div style={{
+                  fontSize: 10, fontWeight: 600, color: '#534AB7',
+                  textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 6,
+                }}>
+                  Test Credentials
                 </div>
-              ))}
-            </div>
+                {[
+                  { key: 'username', val: 'admin' },
+                  { key: 'password', val: 'demo1234' },
+                ].map(({ key, val }) => (
+                  <div key={key} style={{ display: 'flex', gap: 8, fontSize: 11, color: '#666', marginBottom: 3 }}>
+                    <span style={{ width: 70, color: '#888' }}>{key}</span>
+                    <span style={{ fontFamily: 'monospace', color: '#534AB7' }}>{val}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </>
         )}
 

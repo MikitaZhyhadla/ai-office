@@ -62,7 +62,7 @@ export function SprintControls() {
             style={{ padding: '7px 14px', borderRadius: 6, border: '1.5px solid #ddd', background: 'none', color: '#bbb', cursor: 'not-allowed', fontSize: 12 }}>
             + New Sprint
           </button>
-          {doneCount > 0 && (
+          {activeSprint && (
             <button onClick={() => setShowClose(true)}
               style={{ padding: '7px 14px', borderRadius: 6, border: 'none', background: '#791F1F', color: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
               ✕ Close Sprint
