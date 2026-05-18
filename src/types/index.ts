@@ -3,7 +3,7 @@ import type { DevVerdict } from "@/agents/devAgent"
 
 export interface User {
   username:    string
-  role:        'Admin' | 'QA' | 'Developer'
+  role:        'Admin' | 'QA' | 'Developer' | 'BA' | 'Dev' | 'Manager' | 'Administration'
   displayName: string
   projectName: string
 }

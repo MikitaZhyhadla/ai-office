@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useAuthStore } from '@/store/useAuthStore'
+import type { User } from '@/types'
 
 type Tab = 'login' | 'register'
 
@@ -64,6 +65,7 @@ export function AuthScreen() {
   const [regUser,    setRegUser]    = useState('')
   const [regPass,    setRegPass]    = useState('')
   const [regConfirm, setRegConfirm] = useState('')
+  const [regRole,    setRegRole]    = useState<User['role']>('Manager')
   const [localError, setLocalError] = useState<string | null>(null)
 
   const [submitting, setSubmitting] = useState(false)
@@ -83,7 +85,7 @@ export function AuthScreen() {
     }
     setLocalError(null)
     setSubmitting(true)
-    register(regUser, regPass, regName)
+    register(regUser, regPass, regName, regRole)
     setSubmitting(false)
   }
 
@@ -226,6 +228,20 @@ export function AuthScreen() {
           <>
             <Field label="Display Project Name" value={regName}    placeholder="Your full project name" onChange={setRegName}    onClear={() => { clearError(); setLocalError(null) }} />
             <Field label="Username"         value={regUser}    placeholder="Choose a username"   onChange={setRegUser}    onClear={() => { clearError(); setLocalError(null) }} />
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ fontSize: 11, fontWeight: 500, color: '#666', marginBottom: 5, display: 'block' }}>Role</label>
+              <select
+                value={regRole}
+                onChange={e => setRegRole(e.target.value as User['role'])}
+                style={{ width: '100%', border: '1px solid #e0e0f0', borderRadius: 6, padding: '8px 10px', fontSize: 13, background: '#f8f8fc', fontFamily: 'inherit', outline: 'none' }}
+              >
+                <option value="BA">Business Analyst (BA)</option>
+                <option value="QA">QA Engineer</option>
+                <option value="Dev">Developer</option>
+                <option value="Manager">Manager</option>
+                <option value="Administration">Administration</option>
+              </select>
+            </div>
             <Field label="Password"         type="password" value={regPass}    placeholder="Min. 6 characters"  onChange={setRegPass}    onClear={() => { clearError(); setLocalError(null) }} />
             <Field label="Confirm Password" type="password" value={regConfirm} placeholder="Repeat password"    onChange={setRegConfirm} onClear={() => { clearError(); setLocalError(null) }} />
 
