@@ -27,7 +27,14 @@ export function SprintControls() {
     if (!activeSprint) return
     const result = closeSprint(activeSprint.id)
     setShowClose(false)
-    setToastMsg(`Sprint closed. ${result.resolvedCount} tickets resolved, ${result.returnedCount} returned to backlog.`)
+
+    const parts = []
+    if (result.resolvedCount > 0)
+      parts.push(`${result.resolvedCount} ticket${result.resolvedCount !== 1 ? 's' : ''} resolved`)
+    if (result.returnedCount > 0)
+      parts.push(`${result.returnedCount} returned to backlog`)
+
+    setToastMsg(`Sprint closed. ${parts.join(', ')}.`)
     setTimeout(() => setToastMsg(null), 5000)
   }
 

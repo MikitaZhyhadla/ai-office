@@ -60,7 +60,7 @@ export function CloseSprintModal({ sprint, sprintTickets, onConfirm, onClose }: 
         {doneTickets.length > 0 && (
           <>
             <p style={{ fontSize: 12, fontWeight: 600, color: '#27500A', marginBottom: 6 }}>
-              ✓ Moving to Resolved ({doneTickets.length})
+              ✓ Moving to Resolved Items ({doneTickets.length})
             </p>
             <div style={{ borderLeft: '3px solid #27500A', paddingLeft: 10, marginBottom: 16 }}>
               {doneTickets.map(t => (
@@ -82,15 +82,15 @@ export function CloseSprintModal({ sprint, sprintTickets, onConfirm, onClose }: 
               {unfinishedTickets.map(t => (
                 <div key={t.id} style={{ fontSize: 12, color: '#333', padding: '3px 0', display: 'flex', justifyContent: 'space-between' }}>
                   <span>{t.title}</span>
-                  <span style={{ color: '#888', fontSize: 11, textTransform: 'capitalize' }}>{t.status}</span>
+                  <span style={{ color: '#888', fontSize: 11, textTransform: 'capitalize' }}>
+                    {t.status === 'inprog' ? 'In Progress' : t.status}
+                  </span>
                 </div>
               ))}
             </div>
-            <div style={{ background: '#FEF3CD', borderRadius: 6, padding: '8px 12px', marginBottom: 12 }}>
-              <p style={{ fontSize: 12, color: '#854F0B', margin: 0 }}>
-                {unfinishedTickets.length} unfinished item{unfinishedTickets.length !== 1 ? 's' : ''} will be
-                automatically returned to the backlog after confirmation.
-              </p>
+            <div style={{ background: '#FAEEDA', borderRadius: 6, padding: '8px 12px', marginBottom: 12, fontSize: 12, color: '#854F0B' }}>
+              {unfinishedTickets.length} unfinished ticket{unfinishedTickets.length !== 1 ? 's' : ''} will return
+              to the backlog with status Todo.
             </div>
           </>
         )}
