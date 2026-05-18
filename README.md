@@ -157,7 +157,9 @@ User types requirement
         ↓
   Dev clicks Generate Tech Notes → implementation plan
         ↓
-  Sprint closed → Done tickets archived in Resolved Items
+  Sprint closed → Done tickets       → Resolved Items
+  Unfinished tickets → Backlog (returned automatically)
+  Reopen button      → moves ticket from Resolved Items back to Backlog
 ```
 
 All agent calls route through a secure server-side proxy (`/api/agents`). Your Anthropic API key never reaches the browser.
