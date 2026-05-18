@@ -19,6 +19,11 @@
 
 **AI Office** is an agile project management tool where AI agents do the heavy lifting — converting raw ideas into structured requirements, reviewing feasibility, generating test cases, and managing your sprint lifecycle automatically.
 
+> **AI-First by design** — the AI agents *are* the team.
+> BA, QA, and Dev agents handle analysis, review, and planning.
+> Humans supervise and approve — they don't execute.
+> Without the agents, there's no pipeline. That's the point.
+
 Instead of spending hours writing specs and tickets, you type a requirement in plain language and a team of specialized AI agents (BA Lead, QA Lead, Dev Lead) analyze, structure, and validate it in seconds. The result lands directly on your Kanban board as a properly formatted User Story with acceptance criteria, test cases, and story point estimates.
 
 Built for **Product Managers, Business Analysts, and Agile teams** who want to move faster without sacrificing quality. Works in English and Russian.

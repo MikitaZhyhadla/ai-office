@@ -21,6 +21,7 @@ import { runTranslationAgent } from "@/agents/translationAgent"
 import { needsTranslation, detectLanguageName } from "@/lib/detectLanguage"
 import { TranslationBanner } from "@/components/pipeline/TranslationBanner"
 import { useAuthStore } from "@/store/useAuthStore"
+import { TeamPanel } from "@/components/pipeline/TeamPanel"
 import type { Format, RequirementData, Ticket, TicketHistoryEntry, Severity } from "@/types"
 import type { QAVerdict } from "@/agents/qaAgent"
 import type { DevVerdict } from "@/agents/devAgent"
@@ -319,7 +320,10 @@ export default function PipelinePage() {
   return (
     <div style={{ background: "#f0eff7", minHeight: "100vh" }}>
       <Topbar />
-      <main style={{ padding: 22, maxWidth: 900, margin: "0 auto" }}>
+      <main style={{ padding: 22 }}>
+        <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start', maxWidth: 1200, margin: '0 auto' }}>
+          <TeamPanel />
+          <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 18 }}>Requirements Pipeline</div>
         <PipelineStages />
 
@@ -540,6 +544,8 @@ export default function PipelinePage() {
           </>
         )}
         <ActivityLog />
+          </div>{/* end pipeline content */}
+        </div>{/* end flex row */}
       </main>
       <AgentToast
         agentName={activeAgentName}
