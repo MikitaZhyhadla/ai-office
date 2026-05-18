@@ -1,4 +1,5 @@
 'use client'
+import { getInitials } from '@/lib/avatarUtils'
 
 interface TeamMemberRowProps {
   name: string
@@ -15,7 +16,7 @@ const roleColors: Record<string, string> = {
 }
 
 export function TeamMemberRow({ name, role, type, isOnline = true, label }: TeamMemberRowProps) {
-  const initials = name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
+  const initials = getInitials(name)
   const color = type === 'ai' ? '#534AB7' : (roleColors[role] || '#888')
   const badgeLabel = label || (type === 'ai' ? 'AI Agent' : role)
   const badgeBg = type === 'ai' ? '#EDE9FE' : '#f0f4ff'

@@ -33,6 +33,7 @@ interface SettingsState {
   dodItems: DodItem[]
   autoTranslate: boolean
   updateProject: (data: { projectName?: string; projectDescription?: string; teamSize?: number }) => void
+  setProjectName: (name: string) => void
   updateModel: (model: string) => void
   updateJira: (data: Partial<JiraConfig>) => void
   updateAzure: (data: Partial<AzureConfig>) => void
@@ -72,6 +73,7 @@ export const useSettingsStore = create<SettingsState>()(
       autoTranslate: false,
 
       updateProject: (data) => set((s) => ({ ...s, ...data })),
+      setProjectName: (name) => set({ projectName: name }),
       updateModel: (model) => set({ model }),
       updateJira: (data) => set((s) => ({ jira: { ...s.jira, ...data } })),
       updateAzure: (data) => set((s) => ({ azure: { ...s.azure, ...data } })),

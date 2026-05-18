@@ -61,11 +61,12 @@ export function AuthScreen() {
   const [loginPass, setLoginPass] = useState('')
 
   // Register fields
-  const [regName,    setRegName]    = useState('')
-  const [regUser,    setRegUser]    = useState('')
-  const [regPass,    setRegPass]    = useState('')
-  const [regConfirm, setRegConfirm] = useState('')
-  const [regRole,    setRegRole]    = useState<User['role']>('Manager')
+  const [regDisplayName, setRegDisplayName] = useState('')
+  const [regProjectName, setRegProjectName] = useState('')
+  const [regUser,        setRegUser]        = useState('')
+  const [regPass,        setRegPass]        = useState('')
+  const [regConfirm,     setRegConfirm]     = useState('')
+  const [regRole,        setRegRole]        = useState<User['role']>('Manager')
   const [localError, setLocalError] = useState<string | null>(null)
 
   const [submitting, setSubmitting] = useState(false)
@@ -85,7 +86,7 @@ export function AuthScreen() {
     }
     setLocalError(null)
     setSubmitting(true)
-    register(regUser, regPass, regName, regRole)
+    register(regUser, regPass, regDisplayName, regProjectName, regRole)
     setSubmitting(false)
   }
 
@@ -226,8 +227,9 @@ export function AuthScreen() {
         {/* Register form */}
         {tab === 'register' && (
           <>
-            <Field label="Display Project Name" value={regName}    placeholder="Your full project name" onChange={setRegName}    onClear={() => { clearError(); setLocalError(null) }} />
-            <Field label="Username"         value={regUser}    placeholder="Choose a username"   onChange={setRegUser}    onClear={() => { clearError(); setLocalError(null) }} />
+            <Field label="Your Full Name"        value={regDisplayName} placeholder="e.g. Jane Doe"        onChange={setRegDisplayName} onClear={() => { clearError(); setLocalError(null) }} />
+            <Field label="Display Project Name"  value={regProjectName} placeholder="e.g. My Project"      onChange={setRegProjectName} onClear={() => { clearError(); setLocalError(null) }} />
+            <Field label="Username"              value={regUser}        placeholder="Choose a username"     onChange={setRegUser}        onClear={() => { clearError(); setLocalError(null) }} />
             <div style={{ marginBottom: 14 }}>
               <label style={{ fontSize: 11, fontWeight: 500, color: '#666', marginBottom: 5, display: 'block' }}>Role</label>
               <select
