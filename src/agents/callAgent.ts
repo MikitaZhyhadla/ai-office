@@ -13,7 +13,7 @@ function getModel(): string {
   return 'claude-haiku-4-5-20251001'
 }
 
-export async function callAgent(system: string, userMessage: string): Promise<string> {
+export async function callAgent(system: string, userMessage: string, maxTokens = 1000): Promise<string> {
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
       const res = await fetch("/api/agents", {
@@ -21,6 +21,7 @@ export async function callAgent(system: string, userMessage: string): Promise<st
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           model: getModel(),
+          max_tokens: maxTokens,
           system,
           messages: [{ role: "user", content: userMessage }],
         }),
