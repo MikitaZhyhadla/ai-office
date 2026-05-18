@@ -20,8 +20,14 @@ const DEPARTMENT_LABELS: Record<string, string> = {
 }
 
 export function TeamPanel() {
-  const users = useAuthStore(s => s.users)
+  const allUsers = useAuthStore(s => s.users)
   const currentUser = useAuthStore(s => s.currentUser)
+
+  // Only show users from the same project; backward compat for users without projectId
+  const users = allUsers.filter(u =>
+    !u.projectId ||
+    u.projectId === currentUser?.projectId
+  )
 
   const aiByDept = AI_AGENTS.reduce((acc, agent) => {
     const dept = DEPARTMENT_LABELS[agent.role] || agent.role

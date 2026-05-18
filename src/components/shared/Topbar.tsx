@@ -2,6 +2,8 @@
 import { usePathname } from "next/navigation"
 import Link from "next/link"
 import { useAuthStore } from "@/store/useAuthStore"
+import { useSettingsStore } from "@/store/useSettingsStore"
+import { getInitials } from "@/lib/avatarUtils"
 
 const tabs = [
   { label: "Pipeline",     href: "/" },
@@ -13,7 +15,11 @@ const tabs = [
 
 export function Topbar() {
   const path = usePathname()
-  const { currentUser, logout } = useAuthStore()
+  const currentUser = useAuthStore(s => s.currentUser)
+  const logout = useAuthStore(s => s.logout)
+  const projectName = useSettingsStore(s => s.projectName)
+
+  const userInitials = getInitials(currentUser?.displayName ?? '')
 
   return (
     <nav style={{ display:"flex", alignItems:"center", height:48,
@@ -31,6 +37,11 @@ export function Topbar() {
 
       {currentUser && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginLeft: 'auto' }}>
+          {projectName && (
+            <span style={{ fontSize: 12, color: '#534AB7', fontWeight: 600 }}>
+              {projectName}
+            </span>
+          )}
           <span style={{
             fontSize: 10, fontWeight: 600, padding: '2px 8px',
             borderRadius: 4,
@@ -41,6 +52,14 @@ export function Topbar() {
           }}>
             {currentUser.role}
           </span>
+          <div style={{
+            width: 30, height: 30, borderRadius: '50%',
+            background: '#534AB7', color: '#fff',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 11, fontWeight: 700, flexShrink: 0,
+          }}>
+            {userInitials}
+          </div>
           <span style={{ fontSize: 12, color: '#555', fontWeight: 500 }}>
             {currentUser.displayName}
           </span>

@@ -6,6 +6,7 @@ export interface User {
   role:        'Admin' | 'QA' | 'Developer' | 'BA' | 'Dev' | 'Manager' | 'Administration'
   displayName: string
   projectName: string
+  projectId?:  string
 }
 
 export interface TestCase {
