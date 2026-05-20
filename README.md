@@ -19,11 +19,6 @@
 
 **AI Office** is an agile project management tool where AI agents do the heavy lifting — converting raw ideas into structured requirements, reviewing feasibility, generating test cases, and managing your sprint lifecycle automatically.
 
-> **AI-First by design** — the AI agents *are* the team.
-> BA, QA, and Dev agents handle analysis, review, and planning.
-> Humans supervise and approve — they don't execute.
-> Without the agents, there's no pipeline. That's the point.
-
 Instead of spending hours writing specs and tickets, you type a requirement in plain language and a team of specialized AI agents (BA Lead, QA Lead, Dev Lead) analyze, structure, and validate it in seconds. The result lands directly on your Kanban board as a properly formatted User Story with acceptance criteria, test cases, and story point estimates.
 
 Built for **Product Managers, Business Analysts, and Agile teams** who want to move faster without sacrificing quality. Works in English and Russian.
@@ -157,9 +152,7 @@ User types requirement
         ↓
   Dev clicks Generate Tech Notes → implementation plan
         ↓
-  Sprint closed → Done tickets       → Resolved Items
-  Unfinished tickets → Backlog (returned automatically)
-  Reopen button      → moves ticket from Resolved Items back to Backlog
+  Sprint closed → Done tickets archived in Resolved Items
 ```
 
 All agent calls route through a secure server-side proxy (`/api/agents`). Your Anthropic API key never reaches the browser.
@@ -290,13 +283,21 @@ src/
 - Pipeline state persistence (survives navigation)
 - Agent activity toast with timeout warnings
 
-### ✅ Phase 3.x — Sprint Lifecycle (current)
+### ✅ Phase 3.1 — Sprint Lifecycle (current)
 - **Create Sprint** from Kanban board with smart defaults
 - **Close Sprint** — confirmation modal with velocity summary
 - **Resolved Items** section in Backlog, grouped by sprint
 - Kanban board shows only in-sprint tickets
 
-### 📋 Phase 4.0 — Team & Collaboration (planned)
+### 📋 Phase 4.0 — UX Improvements & DB Integration (planned)
+- New Sprint button on Backlog tab
+- Unified Close Sprint & Generate Retro button (Kanban + Backlog)
+- Ticket status sync between drag-and-drop and action buttons
+- Clear requirement field on reset
+- Bug Report uses QA Agent instead of BA Agent
+- Database integration (Supabase) — migration plan documented
+
+### 📋 Phase 5.0 — Team & Collaboration (planned)
 - Real-time multiplayer (multiple users editing simultaneously)
 - Comments and @mentions on tickets
 - Slack / Teams notifications
