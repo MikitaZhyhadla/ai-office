@@ -25,6 +25,32 @@ Built for **Product Managers, Business Analysts, and Agile teams** who want to m
 
 ---
 
+## 🧠 AI-First Philosophy
+
+AI Office is built around an **AI-First** approach — meaning AI is not a feature added on top of the product, it is the core of every workflow.
+
+> **The human sets the direction. The AI does the work.**
+
+Every stage of the requirements lifecycle is handled or assisted by a specialized AI agent:
+
+| Stage | Who does it |
+|-------|-------------|
+| Write a requirement | Human (plain language, any quality) |
+| Structure into GWT / FR / NFR / AC | 🤖 BA Agent |
+| Check testability & flag ambiguities | 🤖 QA Agent |
+| Check technical feasibility | 🤖 Dev Agent |
+| Revise if issues found | 🤖 BA Agent (automatic loop) |
+| Generate test cases | 🤖 QA Agent (auto on In Progress) |
+| Generate tech notes | 🤖 Dev Agent (on demand) |
+| Prioritize backlog (MoSCoW) | 🤖 BA Agent |
+| Analyze bug reports | 🤖 QA Agent |
+| Write sprint retrospective | 🤖 Retro Agent |
+| Final approval | ✅ Human |
+
+This means a single person can do the work of an entire BA/QA/Dev team for requirements — in seconds, not days. AI Office doesn't ask humans to adapt to the tool. The tool adapts to humans: accept rough input, produce structured output.
+
+---
+
 ## Screenshots
 
 ### Requirements Pipeline — BA Agents in action
@@ -81,7 +107,7 @@ Built for **Product Managers, Business Analysts, and Agile teams** who want to m
 Convert raw ideas into structured requirements in seconds. Type in plain language (English or Russian), choose GWT (Given/When/Then) or Classic (FR/NFR/AC) format, and BA agents generate a full spec automatically.
 
 ### 🐛 Bug Report Pipeline
-A dedicated input mode for bug reports. Describe the bug in plain language — BA agent structures it with severity classification (Critical/Major/Minor), steps to reproduce, expected vs actual behavior.
+A dedicated input mode for bug reports. Describe the bug in plain language — QA agent structures it with severity classification (Critical/Major/Minor), steps to reproduce, expected vs actual behavior.
 
 ### 🤖 Multi-Agent AI Review
 After BA analysis, QA Lead and Dev Lead agents run **in parallel** to check testability and technical feasibility. If issues are found, BA agent revises automatically. Human approves or overrides.
@@ -220,12 +246,12 @@ src/
 │   ├── baAgentGWT.ts         # BA agent: GWT format
 │   ├── baAgentClassic.ts     # BA agent: Classic format
 │   ├── baAgentRevise.ts      # BA agent: revision loop
-│   ├── bugAgent.ts           # BA agent: bug report structuring
+│   ├── bugAgent.ts           # QA agent: bug report structuring
 │   ├── qaAgent.ts            # QA agent: testability check
 │   ├── devAgent.ts           # Dev agent: feasibility check
 │   ├── qaTestCaseAgent.ts    # QA agent: test case generation
 │   ├── devTechNotesAgent.ts  # Dev agent: tech notes generation
-│   └── retroAgent.ts        # BA agent: sprint retrospective
+│   └── retroAgent.ts        # Retro agent: sprint retrospective
 │
 ├── app/                      # Next.js app router pages
 │   ├── page.tsx              # Pipeline page
