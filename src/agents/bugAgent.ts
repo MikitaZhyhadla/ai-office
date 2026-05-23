@@ -2,7 +2,7 @@ import { callAgent } from "./callAgent"
 import { stripJsonFences } from '@/lib/parseJson'
 import type { BugReport, Severity } from "@/types"
 
-const SYSTEM = `You are Alice BA, a senior business analyst specialising in software quality.
+const SYSTEM = `You are QA Lead, a senior quality assurance engineer specialising in bug classification and defect analysis.
 You receive a natural-language bug report and convert it into a structured, developer-ready bug ticket.
 Extract or infer all fields from the text. Be specific and actionable.
 stepsToReproduce must be a numbered list of concrete steps — at least 2 items.

@@ -253,10 +253,10 @@ export default function PipelinePage() {
   async function handleAnalyzeBug() {
     if (bugText.trim().length < 20) return
     setLoading(true)
-    setActiveAgentName("Alice BA")
+    setActiveAgentName("QA Lead")
     setMode('analyzing')
     incPipeline("ba", 1)
-    addLog({ agentName: "Alice BA", agentRole: "ba", message: "🐛 Bug Report received — Alice BA analyzing..." })
+    addLog({ agentName: "QA Lead", agentRole: "qa", message: "🐛 Bug Report received — QA Lead analyzing..." })
 
     try {
       const projectDescription = useSettingsStore.getState().projectDescription
@@ -268,8 +268,8 @@ export default function PipelinePage() {
       const history: TicketHistoryEntry[] = [{
         id: crypto.randomUUID(),
         timestamp: now,
-        actor: "Alice BA",
-        actorRole: "ba",
+        actor: "QA Lead",
+        actorRole: "qa",
         message: `Bug ticket created — Severity: ${bugReport.severity} | Area: ${bugReport.affectedArea}`,
       }]
 
@@ -414,7 +414,7 @@ export default function PipelinePage() {
           }}>
             <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>New Bug Report</div>
             <div style={{ fontSize: 12, color: "#888", marginBottom: 16 }}>
-              BA agent will classify severity and create a ticket
+              QA agent will classify severity and create a ticket
             </div>
 
             {/* Severity */}
@@ -510,9 +510,9 @@ export default function PipelinePage() {
                   cursor: loading || bugText.trim().length < 20 ? "not-allowed" : "pointer",
                 }}
               >
-                {loading ? "Analyzing..." : "🐛 Analyze Bug with BA Agent"}
+                {loading ? "Analyzing..." : "🐛 Analyze Bug with QA Agent"}
               </button>
-              <span style={{ fontSize: 11, color: "#aaa" }}>● Agents ready</span>
+              <span style={{ fontSize: 11, color: loading ? "#9ca3af" : "#22c55e" }}>● Agents ready</span>
             </div>
           </div>
         )}
