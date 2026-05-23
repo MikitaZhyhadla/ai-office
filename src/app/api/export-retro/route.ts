@@ -1,7 +1,7 @@
 import type { RetroReport } from "@/types"
 
 function formatRetroAsText(report: RetroReport): string {
-  return `Sprint ${report.sprintName} Retrospective
+  return `Sprint Retrospective: ${report.sprintName}
 ================================
 Velocity: ${report.velocity} SP | Tickets: ${report.completedTickets}/${report.totalTickets} | Revision rate: ${report.revisionRate}
 
