@@ -81,7 +81,8 @@ export const useAppStore = create<AppState>()(
         const next = { ...s.kanban }
         cols.forEach(c => { next[c] = next[c].filter(t => t.id !== ticket.id) })
         next[col] = [...next[col], { ...ticket, status: col }]
-        return { kanban: next }
+        const updatedTickets = s.tickets.map(t => t.id === ticket.id ? { ...t, status: col } : t)
+        return { kanban: next, tickets: updatedTickets }
       }),
       moveTicket: (ticketId, status) => set(s => {
         const cols: KanbanColumn[] = ["todo","inprog","review","done"]

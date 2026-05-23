@@ -10,6 +10,7 @@ import { ResolvedItemsSection } from "@/components/backlog/ResolvedItemsSection"
 import { ExportButton } from "@/components/shared/ExportButton"
 import { CreateTicketModal } from "@/components/backlog/CreateTicketModal"
 import { RetroModal } from "@/components/backlog/RetroModal"
+import { CreateSprintModal } from "@/components/kanban/CreateSprintModal"
 import { runRetroAgent } from "@/agents/retroAgent"
 import { runPrioritizationAgent } from "@/agents/prioritizationAgent"
 import type { Ticket, RetroReport } from "@/types"
@@ -24,6 +25,7 @@ export default function BacklogPage() {
   const [retroReport, setRetroReport] = useState<RetroReport | null>(null)
   const [avgCycleTimeDays, setAvgCycleTimeDays] = useState<number | null>(null)
 
+  const [showCreateSprintModal, setShowCreateSprintModal] = useState(false)
   const [isPrioritizing, setIsPrioritizing] = useState(false)
   const [prioritizationSummary, setPrioritizationSummary] = useState<string | null>(null)
   const [prioritizationError, setPrioritizationError] = useState<string | null>(null)
@@ -273,8 +275,14 @@ export default function BacklogPage() {
             retroLoading={retroLoading}
           />
         ) : (
-          <div style={{ background:"#fff", border:"1px solid #e8e8f0", borderRadius:10, padding:14, marginBottom:16, fontSize:12, color:"#aaa", textAlign:"center" }}>
-            No active sprint. Create one from the Kanban board.
+          <div style={{ background:"#fff", border:"1px solid #e8e8f0", borderRadius:10, padding:14, marginBottom:16, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+            <span style={{ fontSize:12, color:"#aaa" }}>No active sprint.</span>
+            <button
+              onClick={() => setShowCreateSprintModal(true)}
+              style={{ padding:"7px 16px", borderRadius:6, border:"1.5px solid #534AB7", background:"none", color:"#534AB7", cursor:"pointer", fontSize:13, fontWeight:600 }}
+            >
+              + New Sprint
+            </button>
           </div>
         )}
 
@@ -312,6 +320,10 @@ export default function BacklogPage() {
           onClose={() => setShowCreateModal(false)}
           onSave={handleCreateTicket}
         />
+      )}
+
+      {showCreateSprintModal && (
+        <CreateSprintModal onClose={() => setShowCreateSprintModal(false)} />
       )}
 
       <RetroModal
