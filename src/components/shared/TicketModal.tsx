@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from "react"
 import { useAppStore } from "@/store/useAppStore"
 import { useSettingsStore } from "@/store/useSettingsStore"
 import { pushTicketToJira, pushTicketToAzure } from "@/lib/pushTicket"
+import { qaTestCaseAgent } from "@/agents/qaTestCaseAgent"
 import { DoDChecklistModal } from "./DoDChecklistModal"
 import { TestCasePanel } from "./TestCasePanel"
 import { BugReportView } from "./BugReportView"
@@ -51,6 +52,9 @@ export function TicketModal({ ticketId, onClose }: TicketModalProps) {
   const updateTicket         = useAppStore(s => s.updateTicket)
   const appendTicketHistory  = useAppStore(s => s.appendTicketHistory)
   const reopenTicket         = useAppStore(s => s.reopenTicket)
+  const setTestCases         = useAppStore(s => s.setTestCases)
+  const setGeneratingTc      = useAppStore(s => s.setGeneratingTc)
+  const setAgentStatus       = useAppStore(s => s.setAgentStatus)
   const testCases = useAppStore(s => s.testCases)
   const tcCount   = testCases[ticketId]?.length ?? 0
 
@@ -138,6 +142,34 @@ export function TicketModal({ ticketId, onClose }: TicketModalProps) {
     }
   }
 
+  const triggerQATestCases = async () => {
+    if (!ticket) return
+    setAgentStatus('qa1', 'thinking', `Generating test cases for ${ticket.id}`)
+    setGeneratingTc(ticket.id, true)
+    try {
+      const cases = await qaTestCaseAgent(ticket.id, ticket.title, ticket.data, ticket.format)
+      setTestCases(ticket.id, cases)
+      moveTicket(ticket.id, 'review')
+      appendTicketHistory(ticket.id, {
+        actor: 'QA Lead',
+        actorRole: 'qa',
+        message: `Generated ${cases.length} test cases (positive, negative, boundary) — ticket moved to In Review`,
+        timestamp: new Date().toISOString(),
+      })
+    } catch (err) {
+      console.error('QA test case generation failed:', err)
+      appendTicketHistory(ticket.id, {
+        actor: 'QA Lead',
+        actorRole: 'qa',
+        message: 'Test case generation failed — ticket remains In Progress',
+        timestamp: new Date().toISOString(),
+      })
+    } finally {
+      setGeneratingTc(ticket.id, false)
+      setAgentStatus('qa1', 'idle')
+    }
+  }
+
   const handleMove = () => {
     if (!nextSt) return
     if (nextSt === "done") {
@@ -151,6 +183,12 @@ export function TicketModal({ ticketId, onClose }: TicketModalProps) {
       actorRole: "human",
       message: `Moved to ${STATUS_LABEL[nextSt]}`,
     })
+    if (nextSt === 'inprog') {
+      const existingCases = useAppStore.getState().testCases[ticket.id] ?? []
+      if (existingCases.length === 0) {
+        triggerQATestCases()
+      }
+    }
   }
 
   const handleDodConfirm = (checkedItemIds: string[]) => {
