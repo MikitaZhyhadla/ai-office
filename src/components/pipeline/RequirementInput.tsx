@@ -1,5 +1,5 @@
 "use client"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import type { Format } from "@/types"
 
 interface Props {
@@ -13,6 +13,12 @@ interface Props {
 export function RequirementInput({ onSubmit, loading, onTextChange, initialText, initialFormat }: Props) {
   const [text, setText] = useState(initialText ?? "")
   const [format, setFormat] = useState<Format>(initialFormat ?? "gwt")
+
+  useEffect(() => {
+    if (initialText === '') {
+      setText('')
+    }
+  }, [initialText])
   return (
     <div style={{ background:"#fff", border:"1px solid #e8e8f0", borderRadius:10, padding:16, marginBottom:16 }}>
       <div style={{ display:"flex", justifyContent:"space-between", marginBottom:12 }}>
