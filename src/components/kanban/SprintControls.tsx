@@ -2,16 +2,13 @@
 import { useState } from 'react'
 import { useAppStore } from '@/store/useAppStore'
 import { CreateSprintModal } from './CreateSprintModal'
-import { CloseSprintModal } from './CloseSprintModal'
+import { CloseSprintAndRetroButton } from '@/components/shared/CloseSprintAndRetroButton'
 
 export function SprintControls() {
   const sprints = useAppStore(s => s.sprints)
   const tickets = useAppStore(s => s.tickets)
-  const closeSprint = useAppStore(s => s.closeSprint)
 
   const [showCreate, setShowCreate] = useState(false)
-  const [showClose, setShowClose] = useState(false)
-  const [toastMsg, setToastMsg] = useState<string | null>(null)
 
   const activeSprint = sprints.find(s => s.status === 'active') ?? null
 
@@ -19,24 +16,8 @@ export function SprintControls() {
     ? tickets.filter(t => activeSprint.ticketIds.includes(t.id))
     : []
 
-  const doneCount = sprintTickets.filter(t => t.status === 'done').length
   const totalSP = sprintTickets.reduce((sum, t) => sum + (t.points ?? 0), 0)
   const doneSP = sprintTickets.filter(t => t.status === 'done').reduce((sum, t) => sum + (t.points ?? 0), 0)
-
-  const handleCloseConfirm = () => {
-    if (!activeSprint) return
-    const result = closeSprint(activeSprint.id)
-    setShowClose(false)
-
-    const parts = []
-    if (result.resolvedCount > 0)
-      parts.push(`${result.resolvedCount} ticket${result.resolvedCount !== 1 ? 's' : ''} resolved`)
-    if (result.returnedCount > 0)
-      parts.push(`${result.returnedCount} returned to backlog`)
-
-    setToastMsg(`Sprint closed. ${parts.join(', ')}.`)
-    setTimeout(() => setToastMsg(null), 5000)
-  }
 
   if (!activeSprint) {
     return (
@@ -69,31 +50,11 @@ export function SprintControls() {
             style={{ padding: '7px 14px', borderRadius: 6, border: '1.5px solid #ddd', background: 'none', color: '#bbb', cursor: 'not-allowed', fontSize: 12 }}>
             + New Sprint
           </button>
-          {activeSprint && (
-            <button onClick={() => setShowClose(true)}
-              style={{ padding: '7px 14px', borderRadius: 6, border: 'none', background: '#791F1F', color: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
-              ✕ Close Sprint
-            </button>
-          )}
+          <CloseSprintAndRetroButton />
         </div>
       </div>
 
       {showCreate && <CreateSprintModal onClose={() => setShowCreate(false)} />}
-
-      {showClose && (
-        <CloseSprintModal
-          sprint={activeSprint}
-          sprintTickets={sprintTickets}
-          onConfirm={handleCloseConfirm}
-          onClose={() => setShowClose(false)}
-        />
-      )}
-
-      {toastMsg && (
-        <div style={{ position: 'fixed', bottom: 24, right: 24, background: '#1F3864', color: '#fff', padding: '12px 20px', borderRadius: 10, fontSize: 13, zIndex: 2000, boxShadow: '0 4px 16px rgba(0,0,0,0.2)' }}>
-          ✓ {toastMsg}
-        </div>
-      )}
     </>
   )
 }

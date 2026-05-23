@@ -2,17 +2,14 @@
 import type { Sprint, Ticket } from "@/types"
 
 interface Props {
-  sprint:          Sprint
-  tickets:         Ticket[]
-  onCloseSprint?:  () => void
-  retroLoading?:   boolean
+  sprint:  Sprint
+  tickets: Ticket[]
 }
 
-export function SprintPanel({ sprint, tickets, onCloseSprint, retroLoading }: Props) {
+export function SprintPanel({ sprint, tickets }: Props) {
   const totalPoints = tickets.reduce((sum, t) => sum + t.points, 0)
   const velocityTarget = 21
   const progress = Math.min(100, Math.round(totalPoints / velocityTarget * 100))
-  const hasDoneTickets = tickets.some(t => t.status === 'done')
   const isClosed = sprint.status === 'closed'
 
   return (
@@ -27,49 +24,10 @@ export function SprintPanel({ sprint, tickets, onCloseSprint, retroLoading }: Pr
             {isClosed ? 'Closed' : 'Active'}
           </span>
         </div>
-        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-          <div style={{ fontSize:11, color:"#aaa" }}>
-            {sprint.startDate} – {sprint.endDate} · velocity {velocityTarget} SP
-          </div>
-          {!isClosed && hasDoneTickets && onCloseSprint && (
-            <button
-              onClick={onCloseSprint}
-              disabled={retroLoading}
-              style={{
-                background: "#534AB7",
-                color: "#fff",
-                border: "none",
-                borderRadius: 8,
-                padding: "7px 14px",
-                fontSize: 12,
-                fontWeight: 500,
-                cursor: retroLoading ? "default" : "pointer",
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-                fontFamily: "inherit",
-                opacity: retroLoading ? 0.7 : 1,
-                whiteSpace: "nowrap",
-              }}
-            >
-              {retroLoading ? (
-                <>
-                  <span style={{
-                    width: 11, height: 11, border: "2px solid rgba(255,255,255,0.4)",
-                    borderTopColor: "#fff", borderRadius: "50%",
-                    display: "inline-block",
-                    animation: "spin 0.7s linear infinite",
-                  }} />
-                  Generating…
-                </>
-              ) : (
-                <>📊 Close Sprint &amp; Generate Retro</>
-              )}
-            </button>
-          )}
+        <div style={{ fontSize:11, color:"#aaa" }}>
+          {sprint.startDate} – {sprint.endDate} · velocity {velocityTarget} SP
         </div>
       </div>
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       <div style={{ height:4, background:"#ededf7", borderRadius:2, overflow:"hidden", marginBottom:8 }}>
         <div style={{ height:"100%", background:"#534AB7", borderRadius:2, width:`${progress}%` }} />
       </div>
