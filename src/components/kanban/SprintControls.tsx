@@ -19,38 +19,34 @@ export function SprintControls() {
   const totalSP = sprintTickets.reduce((sum, t) => sum + (t.points ?? 0), 0)
   const doneSP = sprintTickets.filter(t => t.status === 'done').reduce((sum, t) => sum + (t.points ?? 0), 0)
 
-  if (!activeSprint) {
-    return (
-      <>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0', marginBottom: 16, borderBottom: '1px solid #e8e8f0' }}>
-          <span style={{ fontSize: 13, color: '#aaa' }}>No active sprint — create one to start tracking work</span>
-          <button onClick={() => setShowCreate(true)}
-            style={{ padding: '7px 16px', borderRadius: 6, border: '1.5px solid #534AB7', background: 'none', color: '#534AB7', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
-            + New Sprint
-          </button>
-        </div>
-        {showCreate && <CreateSprintModal onClose={() => setShowCreate(false)} />}
-      </>
-    )
-  }
-
   return (
     <>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0', marginBottom: 16, borderBottom: '1px solid #e8e8f0' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ fontSize: 13, fontWeight: 700, color: '#1F3864' }}>🏃 {activeSprint.name}</span>
-          <span style={{ fontSize: 11, background: '#E1F5EE', color: '#085041', padding: '2px 8px', borderRadius: 20, fontWeight: 600 }}>Active</span>
-          <span style={{ fontSize: 11, color: '#aaa' }}>{activeSprint.startDate} → {activeSprint.endDate}</span>
-          <span style={{ fontSize: 11, color: '#534AB7', fontWeight: 600 }}>{doneSP} / {totalSP} SP Done</span>
-        </div>
+        {activeSprint ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: '#1F3864' }}>🏃 {activeSprint.name}</span>
+            <span style={{ fontSize: 11, background: '#E1F5EE', color: '#085041', padding: '2px 8px', borderRadius: 20, fontWeight: 600 }}>Active</span>
+            <span style={{ fontSize: 11, color: '#aaa' }}>{activeSprint.startDate} → {activeSprint.endDate}</span>
+            <span style={{ fontSize: 11, color: '#534AB7', fontWeight: 600 }}>{doneSP} / {totalSP} SP Done</span>
+          </div>
+        ) : (
+          <span style={{ fontSize: 13, color: '#aaa' }}>No active sprint — create one to start tracking work</span>
+        )}
         <div style={{ display: 'flex', gap: 8 }}>
           <button
-            disabled
-            title="Only one active sprint at a time"
-            style={{ padding: '7px 14px', borderRadius: 6, border: '1.5px solid #ddd', background: 'none', color: '#bbb', cursor: 'not-allowed', fontSize: 12 }}>
+            onClick={!activeSprint ? () => setShowCreate(true) : undefined}
+            disabled={!!activeSprint}
+            title={activeSprint ? 'Only one active sprint at a time' : undefined}
+            style={{
+              padding: '7px 14px', borderRadius: 6, background: 'none', fontSize: 12, fontWeight: 600,
+              border: activeSprint ? '1.5px solid #ddd' : '1.5px solid #534AB7',
+              color: activeSprint ? '#bbb' : '#534AB7',
+              cursor: activeSprint ? 'not-allowed' : 'pointer',
+            }}>
             + New Sprint
           </button>
-          <CloseSprintAndRetroButton />
+          {/* Always mounted so RetroModal state survives sprint closure */}
+          <CloseSprintAndRetroButton disabled={!activeSprint} />
         </div>
       </div>
 
