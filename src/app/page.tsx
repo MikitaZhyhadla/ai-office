@@ -512,7 +512,7 @@ export default function PipelinePage() {
               >
                 {loading ? "Analyzing..." : "🐛 Analyze Bug with QA Agent"}
               </button>
-              <span style={{ fontSize: 11, color: loading ? "#9ca3af" : "#22c55e" }}>● Agents ready</span>
+              <span style={{ fontSize: 11, color: loading ? "#9ca3af" : "#22c55e" }}>● Agent ready</span>
             </div>
           </div>
         )}
