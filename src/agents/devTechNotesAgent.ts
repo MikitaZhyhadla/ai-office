@@ -1,5 +1,6 @@
 import { callAgent } from "./callAgent"
 import { safeParseJson } from '@/lib/parseJson'
+import { buildAgentContext } from '@/lib/buildAgentContext'
 import type { Ticket, TechNotes } from "@/types"
 
 const FALLBACK_TECH_NOTES: TechNotes = {
@@ -10,7 +11,7 @@ const FALLBACK_TECH_NOTES: TechNotes = {
   estimateNote: '',
 }
 
-const SYSTEM = `You are Bob Dev, a senior full-stack developer working on AI Office — a requirements pipeline tool.
+const BASE_SYSTEM = `You are Bob Dev, a senior full-stack developer working on AI Office — a requirements pipeline tool.
 You receive a structured software requirement and generate concise, actionable technical implementation notes.
 Your output is for developers — be specific, reference concrete technologies, patterns, and libraries.
 proposedStack: list the exact technologies, libraries, or frameworks needed. Be specific (e.g. 'Zustand persist middleware', not just 'state management').
@@ -57,6 +58,8 @@ Return a JSON object with this exact schema:
 }
 
 export async function runDevTechNotesAgent(ticket: Ticket, projectDescription: string): Promise<TechNotes> {
+  const contextBlock = buildAgentContext()
+  const SYSTEM = contextBlock ? `${contextBlock}\n\n---\n\n${BASE_SYSTEM}` : BASE_SYSTEM
   const raw = await callAgent(SYSTEM, buildUserPrompt(ticket, projectDescription), 4000)
   const parsed = safeParseJson<TechNotes>(raw, FALLBACK_TECH_NOTES)
   if (parsed === FALLBACK_TECH_NOTES) {

@@ -1,8 +1,9 @@
 import { callAgent } from "./callAgent"
 import { stripJsonFences } from '@/lib/parseJson'
+import { buildAgentContext } from '@/lib/buildAgentContext'
 import type { TestCase, GWTRequirement, ClassicRequirement, Format } from "@/types"
 
-const SYSTEM = `You are a QA Lead agent. Generate comprehensive test cases for a software requirement.
+const BASE_SYSTEM = `You are a QA Lead agent. Generate comprehensive test cases for a software requirement.
 You MUST return ONLY valid JSON — no explanation, no markdown, no preamble.
 
 Return this exact JSON structure:
@@ -44,6 +45,8 @@ Format: ${format.toUpperCase()}
 Requirement:
 ${reqText}`
 
+  const contextBlock = buildAgentContext()
+  const SYSTEM = contextBlock ? `${contextBlock}\n\n---\n\n${BASE_SYSTEM}` : BASE_SYSTEM
   const text = await callAgent(SYSTEM, userMessage)
   try {
     const parsed = JSON.parse(stripJsonFences(text)) as { testCases: TestCase[] }
@@ -56,6 +59,8 @@ ${reqText}`
 
 export async function qaTestCaseAgentFromString(requirement: string): Promise<TestCase[]> {
   const userMessage = `Generate test cases for this requirement:\n${requirement}`
+  const contextBlock = buildAgentContext()
+  const SYSTEM = contextBlock ? `${contextBlock}\n\n---\n\n${BASE_SYSTEM}` : BASE_SYSTEM
   const text = await callAgent(SYSTEM, userMessage)
   try {
     const parsed = JSON.parse(stripJsonFences(text)) as { testCases: TestCase[] }

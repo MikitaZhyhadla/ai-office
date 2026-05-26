@@ -1,8 +1,9 @@
 import { callAgent } from "./callAgent"
 import { stripJsonFences } from '@/lib/parseJson'
+import { buildAgentContext } from '@/lib/buildAgentContext'
 import type { ClassicRequirement } from "@/types"
 
-const SYSTEM = `You are a BA agent. Convert requirements to classic spec format.
+const BASE_SYSTEM = `You are a BA agent. Convert requirements to classic spec format.
 Return ONLY valid JSON, no markdown:
 {
   "title": "string",
@@ -19,6 +20,8 @@ Return ONLY valid JSON, no markdown:
 2-4 FRs, 1-2 NFRs, 2-3 ACs.`
 
 export async function baAgentClassic(rawRequirement: string): Promise<ClassicRequirement> {
+  const contextBlock = buildAgentContext()
+  const SYSTEM = contextBlock ? `${contextBlock}\n\n---\n\n${BASE_SYSTEM}` : BASE_SYSTEM
   const text = await callAgent(SYSTEM, `Convert this requirement:\n\n${rawRequirement}`)
   try {
     return JSON.parse(stripJsonFences(text)) as ClassicRequirement
