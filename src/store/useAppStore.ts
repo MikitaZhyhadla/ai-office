@@ -46,6 +46,8 @@ interface AppState {
   reopenTicket: (ticketId: string) => void
   resetStore: () => void
   generateSDETVerdict: (ticketId: string) => Promise<void>
+  addAgentTokens: (agentId: string, tokens: number) => void
+  addAgentActivity: (agentId: string, activity: string) => void
 }
 
 export const useAppStore = create<AppState>()(
@@ -57,10 +59,11 @@ export const useAppStore = create<AppState>()(
       closedSprints: [],
       sprints: [{ id: "sprint-3", name: "Sprint 3", startDate: "2026-05-12", endDate: "2026-05-25", ticketIds: [], status: 'active' as const }],
       agents: [
-        { id: "alice", name: "Alice BA", role: "ba", status: "idle" },
-        { id: "bob", name: "Bob BA", role: "ba", status: "idle" },
-        { id: "qa1", name: "QA Lead", role: "qa", status: "idle" },
-        { id: "dev1", name: "Dev Lead", role: "dev", status: "idle" },
+        { id: "alice", name: "Alice BA", role: "ba", status: "idle", sessionTokens: 0 },
+        { id: "bob", name: "Bob BA", role: "ba", status: "idle", sessionTokens: 0 },
+        { id: "qa1", name: "QA Lead", role: "qa", status: "idle", sessionTokens: 0 },
+        { id: "dev1", name: "Dev Lead", role: "dev", status: "idle", sessionTokens: 0 },
+        { id: "sdet1", name: "SDET Agent", role: "sdet", status: "idle", sessionTokens: 0 },
       ],
       log: [],
       pipeline: { ba: 0, review: 0, qa: 0, done: 0 },
@@ -249,6 +252,20 @@ export const useAppStore = create<AppState>()(
         generatingTcFor: [],
         selectedTicketId: null,
       }),
+      addAgentTokens: (agentId, tokens) => set(s => ({
+        agents: s.agents.map(a =>
+          a.id === agentId
+            ? { ...a, sessionTokens: (a.sessionTokens || 0) + tokens }
+            : a
+        )
+      })),
+      addAgentActivity: (agentId, activity) => set(s => ({
+        agents: s.agents.map(a =>
+          a.id === agentId
+            ? { ...a, lastActivity: activity, lastActivityAt: new Date().toISOString() }
+            : a
+        )
+      })),
       generateSDETVerdict: async (ticketId: string) => {
         const { sdetAgent } = await import('@/agents/sdetAgent')
         const ticket = useAppStore.getState().tickets.find(t => t.id === ticketId)
