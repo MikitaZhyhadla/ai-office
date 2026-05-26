@@ -1,5 +1,15 @@
 import { useSettingsStore } from '@/store/useSettingsStore'
 
+let _repoContextCache: { product?: string; test?: string } = {}
+
+export function setRepoContextCache(ctx: { product?: string; test?: string }): void {
+  _repoContextCache = ctx
+}
+
+export function clearRepoContextCache(): void {
+  _repoContextCache = {}
+}
+
 const DOMAIN_OPTIONS = [
   { value: 'fintech',     label: 'Fintech',           description: 'Financial services, payments, banking, lending, insurance, crypto' },
   { value: 'ecommerce',   label: 'E-commerce',         description: 'Online retail, marketplaces, product catalogs, checkout, fulfillment' },
@@ -13,9 +23,10 @@ const DOMAIN_OPTIONS = [
   { value: 'custom',      label: 'Other / Custom',      description: '' },
 ]
 
-export function buildAgentContext(): string {
+export function buildAgentContext(repoContexts?: { product?: string; test?: string }): string {
   const s = useSettingsStore.getState()
   const parts: string[] = []
+  const effectiveRepoContexts = repoContexts ?? _repoContextCache
 
   if (s.domainEnabled && s.selectedDomain) {
     const domainOption = DOMAIN_OPTIONS.find(d => d.value === s.selectedDomain)
@@ -38,6 +49,9 @@ export function buildAgentContext(): string {
     lines.push('Use this context to make your analysis more specific and relevant.')
     parts.push(lines.join('\n'))
   }
+
+  if (effectiveRepoContexts?.product) parts.push(effectiveRepoContexts.product)
+  if (effectiveRepoContexts?.test)    parts.push(effectiveRepoContexts.test)
 
   return parts.join('\n\n')
 }

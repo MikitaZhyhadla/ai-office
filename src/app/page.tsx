@@ -20,6 +20,8 @@ import { sdetAgent } from "@/agents/sdetAgent"
 import { runBugAgent } from "@/agents/bugAgent"
 import { runTranslationAgent } from "@/agents/translationAgent"
 import { needsTranslation, detectLanguageName } from "@/lib/detectLanguage"
+import { fetchRepoContext, formatRepoContextForAgent } from "@/lib/fetchRepoContext"
+import { setRepoContextCache, clearRepoContextCache } from "@/lib/buildAgentContext"
 import { TranslationBanner } from "@/components/pipeline/TranslationBanner"
 import { useAuthStore } from "@/store/useAuthStore"
 import { TeamPanel } from "@/components/pipeline/TeamPanel"
@@ -67,6 +69,34 @@ export default function PipelinePage() {
   } = usePipelineStore()
 
   const [activeAgentName, setActiveAgentName] = useState('')
+  const [repoFetching, setRepoFetching] = useState(false)
+
+  async function fetchAndCacheRepoContext() {
+    const { github } = useSettingsStore.getState()
+    const hasAny = github.productRepoEnabled || github.testRepoEnabled
+    if (!hasAny) { clearRepoContextCache(); return }
+
+    setRepoFetching(true)
+    addLog({ agentName: 'System', agentRole: 'system', message: 'Fetching repo context…' })
+    try {
+      const [productCtx, testCtx] = await Promise.allSettled([
+        github.productRepoEnabled ? fetchRepoContext(github.productRepoUrl, github.productRepoPAT) : Promise.resolve(null),
+        github.testRepoEnabled    ? fetchRepoContext(github.testRepoUrl,    github.testRepoPAT)    : Promise.resolve(null),
+      ])
+      setRepoContextCache({
+        product: productCtx.status === 'fulfilled' && productCtx.value
+          ? formatRepoContextForAgent(productCtx.value, 'Product') : undefined,
+        test: testCtx.status === 'fulfilled' && testCtx.value
+          ? formatRepoContextForAgent(testCtx.value, 'Test') : undefined,
+      })
+      addLog({ agentName: 'System', agentRole: 'system', message: 'Repo context ready.' })
+    } catch {
+      addLog({ agentName: 'System', agentRole: 'system', message: 'Failed to fetch repo context — continuing without it.' })
+      clearRepoContextCache()
+    } finally {
+      setRepoFetching(false)
+    }
+  }
 
   // Reset in-flight loading states on page mount — can't resume API calls across navigation
   useEffect(() => {
@@ -84,6 +114,8 @@ export default function PipelinePage() {
     setMode('analyzing')
     setPendingFormat(format)
     setTranslationResult(null)
+
+    await fetchAndCacheRepoContext()
 
     // === TRANSLATION INTERCEPT — Phase 3.8 ===
     let textToAnalyze = text
@@ -261,6 +293,8 @@ export default function PipelinePage() {
     incPipeline("ba", 1)
     addLog({ agentName: "QA Lead", agentRole: "qa", message: "🐛 Bug Report received — QA Lead analyzing..." })
 
+    await fetchAndCacheRepoContext()
+
     try {
       const projectDescription = useSettingsStore.getState().projectDescription
       const bugReport = await runBugAgent(bugText, bugAffectedArea, bugSeverityHint, projectDescription)
@@ -318,7 +352,7 @@ export default function PipelinePage() {
     { value: 'minor',    label: '⚪ Minor',    selectedBg: '#f0f0f0', selectedColor: '#666',    selectedBorder: '#e0e0e0' },
   ]
 
-  const isAnalyzing = loading || isApproving || isRevising
+  const isAnalyzing = loading || isApproving || isRevising || repoFetching
 
   return (
     <div style={{ background: "#f0eff7", minHeight: "100vh" }}>
@@ -329,6 +363,15 @@ export default function PipelinePage() {
           <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 18 }}>Requirements Pipeline</div>
         <PipelineStages />
+
+        {repoFetching && (
+          <div style={{
+            background: '#f0f8ff', border: '1px solid #b0d4f0', borderRadius: 8,
+            padding: '10px 14px', marginBottom: 12, fontSize: 12, color: '#1a6fa0', fontWeight: 500,
+          }}>
+            Fetching repo context…
+          </div>
+        )}
 
         {/* Mode toggle */}
         <div style={{ marginBottom: 12 }}>

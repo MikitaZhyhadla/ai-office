@@ -26,7 +26,7 @@ const DOMAIN_OPTIONS = [
 const NAV_SECTIONS = [
   { heading: 'GENERAL',      items: [{ id: 'project', label: 'Project Info' }, { id: 'model', label: 'AI Model' }] },
   { heading: 'AI CONTEXT',   items: [{ id: 'product-context', label: 'Product Context' }, { id: 'domain-area', label: 'Domain Area' }] },
-  { heading: 'INTEGRATIONS', items: [{ id: 'webhooks', label: 'Webhooks' }] },
+  { heading: 'INTEGRATIONS', items: [{ id: 'github', label: 'GitHub' }, { id: 'webhooks', label: 'Webhooks' }] },
   { heading: 'WORKFLOW',     items: [{ id: 'dod', label: 'Definition of Done' }] },
   { heading: 'INFO',         items: [{ id: 'about', label: 'About' }] },
 ]
@@ -627,6 +627,175 @@ function DomainAreaSection() {
   )
 }
 
+// ─── GitHub Integration Section (F-03) ───────────────────────────────────────
+type GithubConnStatus = 'idle' | 'testing' | 'ok' | 'fail'
+
+function RepoPanel({
+  title,
+  enabled,
+  onToggleEnabled,
+  repoUrl,
+  onRepoUrlChange,
+  pat,
+  onPatChange,
+}: {
+  title: string
+  enabled: boolean
+  onToggleEnabled: () => void
+  repoUrl: string
+  onRepoUrlChange: (v: string) => void
+  pat: string
+  onPatChange: (v: string) => void
+}) {
+  const [status, setStatus] = useState<GithubConnStatus>('idle')
+  const [statusMsg, setStatusMsg] = useState('')
+
+  async function testConnection() {
+    if (!repoUrl) return
+    setStatus('testing')
+    setStatusMsg('')
+    try {
+      const repo = repoUrl.replace('https://github.com/', '').replace(/\/$/, '')
+      const res = await fetch(`/api/github?repo=${encodeURIComponent(repo)}&type=readme`, {
+        headers: pat ? { Authorization: `Bearer ${pat}` } : {},
+      })
+      if (res.ok) {
+        const repoRes = await fetch(`/api/github?repo=${encodeURIComponent(repo)}&type=tree`, {
+          headers: pat ? { Authorization: `Bearer ${pat}` } : {},
+        })
+        if (repoRes.ok) {
+          setStatus('ok')
+          setStatusMsg(`Connected — ${repo}`)
+        } else {
+          setStatus('fail')
+          setStatusMsg('check URL and token')
+        }
+      } else {
+        setStatus('fail')
+        setStatusMsg('check URL and token')
+      }
+    } catch {
+      setStatus('fail')
+      setStatusMsg('Network error')
+    }
+  }
+
+  const toggleStyle: React.CSSProperties = {
+    display: 'inline-flex', alignItems: 'center', cursor: 'pointer', gap: 8,
+    fontSize: 13, fontWeight: 500, color: '#555', marginBottom: 16,
+  }
+
+  return (
+    <div style={{ border: '1px solid #e8e8f0', borderRadius: 8, padding: 18, marginBottom: 16 }}>
+      <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 12 }}>{title}</div>
+
+      <div style={toggleStyle} onClick={onToggleEnabled}>
+        <div style={{
+          width: 34, height: 18, borderRadius: 9,
+          background: enabled ? '#534AB7' : '#ddd',
+          position: 'relative', transition: 'background 0.2s',
+        }}>
+          <div style={{
+            position: 'absolute', top: 2, left: enabled ? 16 : 2,
+            width: 14, height: 14, borderRadius: '50%', background: '#fff',
+            transition: 'left 0.2s',
+          }} />
+        </div>
+        {enabled ? 'Enabled' : 'Disabled'}
+      </div>
+
+      <div style={{ opacity: enabled ? 1 : 0.5, pointerEvents: enabled ? 'auto' : 'none' }}>
+        <div style={{ marginBottom: 12 }}>
+          <span style={label}>Repository URL</span>
+          <input
+            style={input}
+            value={repoUrl}
+            onChange={e => { onRepoUrlChange(e.target.value); setStatus('idle') }}
+            placeholder="https://github.com/username/my-app"
+          />
+        </div>
+
+        <div style={{ marginBottom: 14 }}>
+          <span style={label}>Personal Access Token</span>
+          <input
+            style={input}
+            type="password"
+            value={pat}
+            onChange={e => { onPatChange(e.target.value); setStatus('idle') }}
+            placeholder="ghp_..."
+          />
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <button
+            onClick={testConnection}
+            disabled={!repoUrl || status === 'testing'}
+            style={{
+              padding: '7px 16px', borderRadius: 6, border: '1px solid #e8e8f0',
+              background: '#fff', fontSize: 12, cursor: !repoUrl || status === 'testing' ? 'not-allowed' : 'pointer',
+              color: '#534AB7', fontWeight: 600, opacity: !repoUrl ? 0.4 : 1,
+            }}
+          >
+            {status === 'testing' ? 'Testing…' : 'Test connection'}
+          </button>
+          {status !== 'idle' && status !== 'testing' && (
+            <span style={{
+              fontSize: 12, fontWeight: 600,
+              color: status === 'ok' ? '#22c55e' : '#ef4444',
+              background: status === 'ok' ? '#f0fdf4' : '#fef2f2',
+              border: `1px solid ${status === 'ok' ? '#bbf7d0' : '#fecaca'}`,
+              borderRadius: 6, padding: '3px 10px',
+            }}>
+              {status === 'ok' ? `✓ ${statusMsg}` : `✗ Not connected — ${statusMsg}`}
+            </span>
+          )}
+          {status === 'testing' && (
+            <span style={{ fontSize: 12, color: '#888' }}>Testing…</span>
+          )}
+        </div>
+
+        <div style={{
+          marginTop: 14, background: '#f0fdf4', border: '1px solid #bbf7d0',
+          borderRadius: 8, padding: '10px 13px', fontSize: 11, color: '#166534',
+        }}>
+          Your PAT is stored locally in your browser and sent only to GitHub API via our secure server proxy.
+          We recommend using a fine-grained PAT with read-only &lsquo;Contents&rsquo; permission.
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function GitHubSection() {
+  const { github, updateGithub } = useSettingsStore()
+
+  return (
+    <div id="github" style={card}>
+      <SectionTitle>GitHub Integration</SectionTitle>
+
+      <RepoPanel
+        title="Product Codebase"
+        enabled={github.productRepoEnabled}
+        onToggleEnabled={() => updateGithub({ productRepoEnabled: !github.productRepoEnabled })}
+        repoUrl={github.productRepoUrl}
+        onRepoUrlChange={v => updateGithub({ productRepoUrl: v })}
+        pat={github.productRepoPAT}
+        onPatChange={v => updateGithub({ productRepoPAT: v })}
+      />
+
+      <RepoPanel
+        title="Test Codebase"
+        enabled={github.testRepoEnabled}
+        onToggleEnabled={() => updateGithub({ testRepoEnabled: !github.testRepoEnabled })}
+        repoUrl={github.testRepoUrl}
+        onRepoUrlChange={v => updateGithub({ testRepoUrl: v })}
+        pat={github.testRepoPAT}
+        onPatChange={v => updateGithub({ testRepoPAT: v })}
+      />
+    </div>
+  )
+}
+
 // ─── About Section ───────────────────────────────────────────────────────────
 function AboutSection() {
   return (
@@ -718,6 +887,7 @@ export default function SettingsPage() {
         <ModelSection />
         <ProductContextSection />
         <DomainAreaSection />
+        <GitHubSection />
         <WebhooksSection />
         <DodSection />
         <AboutSection />

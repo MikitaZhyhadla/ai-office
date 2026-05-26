@@ -23,6 +23,15 @@ interface AzureConfig {
   patToken: string
 }
 
+interface GithubConfig {
+  productRepoEnabled: boolean
+  productRepoUrl: string
+  productRepoPAT: string
+  testRepoEnabled: boolean
+  testRepoUrl: string
+  testRepoPAT: string
+}
+
 interface SettingsState {
   model: string
   projectName: string
@@ -42,6 +51,8 @@ interface SettingsState {
   domainEnabled: boolean
   selectedDomain: string
   customDomain: string
+  // F-03 GitHub Integration
+  github: GithubConfig
   updateProject: (data: { projectName?: string; projectDescription?: string; teamSize?: number }) => void
   setProjectName: (name: string) => void
   updateModel: (model: string) => void
@@ -57,6 +68,7 @@ interface SettingsState {
   setDomainEnabled: (v: boolean) => void
   setSelectedDomain: (v: string) => void
   setCustomDomain: (v: string) => void
+  updateGithub: (data: Partial<GithubConfig>) => void
 }
 
 const DEFAULT_DOD_ITEMS: DodItem[] = [
@@ -97,6 +109,14 @@ export const useSettingsStore = create<SettingsState>()(
       domainEnabled: false,
       selectedDomain: '',
       customDomain: '',
+      github: {
+        productRepoEnabled: false,
+        productRepoUrl: '',
+        productRepoPAT: '',
+        testRepoEnabled: false,
+        testRepoUrl: '',
+        testRepoPAT: '',
+      },
 
       updateProject: (data) => set((s) => ({ ...s, ...data })),
       setProjectName: (name) => set({ projectName: name }),
@@ -113,6 +133,7 @@ export const useSettingsStore = create<SettingsState>()(
       setDomainEnabled: (v) => set({ domainEnabled: v }),
       setSelectedDomain: (v) => set({ selectedDomain: v }),
       setCustomDomain: (v) => set({ customDomain: v }),
+      updateGithub: (data) => set((s) => ({ github: { ...s.github, ...data } })),
     }),
     { name: 'ai-office-settings' }
   )
