@@ -87,11 +87,19 @@ This is the core principle of AI-Native design: the human stays in the loop for 
 
 ---
 
-### Pixel Office — Animated AI Agents
+### Pixel Office v3 — Animated AI Agents
 
-> AI agents visualized as pixel art characters. They walk to workstations when analyzing requirements.
+> AI agents visualized as pixel art characters in a real-time office environment. Each agent shows their current model, token usage, and task. Documents orbit active agents. Live activity feed and session cost tracker included.
 
-![Pixel Office](docs/screenshots/pixel-office-live.png)
+![Pixel Office v3](docs/screenshots/pixel-office-v3.png)
+
+---
+
+### Settings — Per-Agent Model Selection
+
+> Configure a default Claude model for all agents, or override each agent individually. Built-in cost estimator shows the price per full pipeline run based on your current model configuration.
+
+![Settings AI Model](docs/screenshots/settings-ai-model.png)
 
 ---
 
@@ -133,15 +141,24 @@ Configurable checklist that must be completed before a ticket can move to Done. 
 ### 🌐 Auto-Translation
 Write requirements in Russian — auto-translated to English before BA analysis. Translation uses Haiku model regardless of selected model, keeping costs minimal.
 
-### ⚙️ Settings Page
-- Claude model selector (Haiku for speed, Sonnet for quality)
+### ⚙️ Settings — Per-Agent Model Selection
+- **Default model** selector: choose Haiku (speed), Sonnet (quality), or Opus (maximum capability) for all agents at once
+- **Override per agent**: toggle to configure each agent individually — set Sonnet only for Dev Lead while keeping others on Haiku
+- **Cost estimator**: shows estimated cost per full pipeline run based on your current model configuration
 - Project name and description (used as AI context)
 - Webhook integration (Jira / Azure DevOps)
 - Definition of Done checklist configuration
 - About section with dynamic build version
 
-### 🎮 Pixel Office
-Animated pixel art visualization of your AI agent team. Agents physically walk to workstations when analyzing requirements. Real-time activity feed. Full-screen mode.
+### 🎮 Pixel Office v3
+Fully redesigned animated pixel art visualization of your AI agent team:
+- **Document orbit animation** — active agents have documents floating around them; speed reflects task intensity
+- **Per-agent status cards** — model name, current status, token usage bar, task description, and estimated cost
+- **Live activity feed** — real-time log of all agent actions with timestamps
+- **Session cost tracker** — live counter showing total tokens and estimated API cost for the session
+- **Stats tab** — token heatmap, breakdown by agent, calls count, and average SP
+- **SDET Agent placeholder** — grayed-out desk reserved for the upcoming Phase 5.0 SDET agent
+- Full-screen mode
 
 ### 🔐 Multi-user Auth
 Login/register with project-scoped data isolation. Each user's tickets, sprints, and backlog are completely separate.
@@ -261,12 +278,13 @@ src/
 │   ├── pipeline/             # RequirementInput, ReviewCard, RevisionBanner
 │   ├── backlog/              # SprintPanel, TicketRow, ResolvedItemsSection
 │   ├── kanban/               # KanbanBoard, KanbanCard, SprintControls
+│   ├── office/               # PixelCanvas, AgentCard, ActivityFeed, StatsTabs
 │   └── shared/               # Topbar, TicketModal, TestCasePanel, AgentToast
 │
 ├── store/
 │   ├── useAppStore.ts        # Main Zustand store (tickets, sprints, agents)
 │   ├── usePipelineStore.ts   # Pipeline state persistence
-│   └── useSettingsStore.ts   # Settings persistence
+│   └── useSettingsStore.ts   # Settings persistence (incl. per-agent models)
 │
 ├── types/index.ts            # All TypeScript interfaces
 └── lib/parseJson.ts          # stripJsonFences utility
@@ -333,6 +351,22 @@ src/
 - **Generate Test Automation Prompt** button in TicketModal — SDET agent generates automation prompt based on ticket requirements
 - Velocity and burndown charts
 - Sprint analytics dashboard
+
+### 📋 Phase 5.5 — Pixel Office v3 & Settings Redesign (planned)
+- **Pixel Office v3** — complete visual overhaul of the agent visualization screen:
+  - Document orbit animation replaces walking — documents float around active agents, speed reflects task intensity
+  - Per-agent sidebar cards showing model, status, token usage bar, current task, and cost
+  - Live activity feed with timestamps in a dedicated tab
+  - Stats tab — token heatmap, breakdown per agent, session cost calculator
+  - SDET Agent desk placeholder (grayed out, activates in Phase 5.0)
+  - Full-screen mode button
+- **Per-agent model selection** in Settings — AI Model page redesigned:
+  - Default model radio selector (Haiku / Sonnet / Opus) for all agents
+  - Override per agent toggle — when enabled, default model is disabled and each agent gets its own selector
+  - Agents without a custom override show "following" status and track the default
+  - Custom badge with one-click reset per agent
+  - Cost estimator panel showing price per full pipeline run for the current configuration
+- No database required — all stored in `useSettingsStore` with Zustand persist
 
 ### 📋 Phase 6.0 — Database Integration (planned)
 - Supabase (PostgreSQL) — full schema documented in AI-Office-DB-Plan.docx
