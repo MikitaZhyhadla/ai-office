@@ -16,13 +16,14 @@ import { baAgentClassic } from "@/agents/baAgentClassic"
 import { baAgentRevise } from "@/agents/baAgentRevise"
 import { qaAgent } from "@/agents/qaAgent"
 import { devAgent } from "@/agents/devAgent"
+import { sdetAgent } from "@/agents/sdetAgent"
 import { runBugAgent } from "@/agents/bugAgent"
 import { runTranslationAgent } from "@/agents/translationAgent"
 import { needsTranslation, detectLanguageName } from "@/lib/detectLanguage"
 import { TranslationBanner } from "@/components/pipeline/TranslationBanner"
 import { useAuthStore } from "@/store/useAuthStore"
 import { TeamPanel } from "@/components/pipeline/TeamPanel"
-import type { Format, RequirementData, Ticket, TicketHistoryEntry, Severity } from "@/types"
+import type { Format, RequirementData, Ticket, TicketHistoryEntry, Severity, SDETVerdict } from "@/types"
 import type { QAVerdict } from "@/agents/qaAgent"
 import type { DevVerdict } from "@/agents/devAgent"
 
@@ -144,13 +145,14 @@ export default function PipelinePage() {
       incPipeline("review", -1)
       incPipeline("qa", 1)
       const reqText = JSON.stringify(pendingReview)
-      const [qa, dev] = await Promise.all([qaAgent(reqText), devAgent(reqText)])
+      const [qa, dev, sdet] = await Promise.all([qaAgent(reqText), devAgent(reqText), sdetAgent(reqText).catch(() => undefined)])
       setAgentStatus("qa1", "idle")
       setAgentStatus("dev1", "idle")
       setQaVerdict(qa)
       setDevVerdict(dev)
       addLog({ agentName: "QA Lead", agentRole: "qa", message: qa.summary })
       addLog({ agentName: "Dev Lead", agentRole: "dev", message: dev.summary })
+      if (sdet) addLog({ agentName: "SDET", agentRole: "qa", message: `Automation: ${sdet.automationFeasibility} — ${sdet.suggestedFramework}` })
 
       const hasIssues = !qa.testable || !dev.feasible || qa.issues.length > 0 || dev.blockers.length > 0
 
@@ -165,7 +167,7 @@ export default function PipelinePage() {
         return
       }
 
-      createTicket(pendingReview, qa, dev)
+      createTicket(pendingReview, qa, dev, undefined, sdet)
     } finally {
       setIsApproving(false)
     }
@@ -199,7 +201,7 @@ export default function PipelinePage() {
     addLog({ agentName: "System", agentRole: "system", message: "Ticket created with noted issues. Approved by human override." })
   }
 
-  function createTicket(req: RequirementData, qa: QAVerdict, dev: DevVerdict, issueNote?: string) {
+  function createTicket(req: RequirementData, qa: QAVerdict, dev: DevVerdict, issueNote?: string, sdet?: SDETVerdict) {
     const points = dev.sp_override ?? req.story_points
     const id = `TICK-${Date.now().toString().slice(-4)}`
     const now = new Date().toISOString()
@@ -232,6 +234,7 @@ export default function PipelinePage() {
       userId: currentUser?.username,
       qaVerdict: qa,
       devVerdict: dev,
+      sdetVerdict: sdet,
       history,
     }
     addTicket(ticket)

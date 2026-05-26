@@ -1,6 +1,15 @@
 import type { QAVerdict } from "@/agents/qaAgent"
 import type { DevVerdict } from "@/agents/devAgent"
 
+export interface SDETVerdict {
+  automationFeasibility: 'Yes' | 'Partial' | 'No'
+  feasibilityReason: string
+  recommendedTestTypes: Array<'E2E' | 'Integration' | 'Unit' | 'API' | 'Performance'>
+  existingTestImpact: string
+  automationPriority: 'High' | 'Medium' | 'Low'
+  suggestedFramework: string
+}
+
 export interface User {
   username:    string
   role:        'Admin' | 'QA' | 'Developer' | 'BA' | 'Dev' | 'Manager' | 'Administration'
@@ -118,6 +127,9 @@ export interface Ticket {
   inSprint?:            boolean
   resolvedInSprint?: string
   resolvedAt?:       string
+  sdetVerdict?:  SDETVerdict
+  devPrompt?:    string
+  testPrompt?:   string
 }
 export interface Agent {
   id: string

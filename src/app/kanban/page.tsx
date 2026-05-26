@@ -6,6 +6,8 @@ import { KanbanColumn } from "@/components/kanban/KanbanColumn"
 import { KanbanCard } from "@/components/kanban/KanbanCard"
 import { SprintControls } from "@/components/kanban/SprintControls"
 import { DoDChecklistModal } from "@/components/shared/DoDChecklistModal"
+import { CollapsiblePanel } from "@/components/shared/CollapsiblePanel"
+import { BurndownChart } from "@/components/kanban/BurndownChart"
 import { useAppStore } from "@/store/useAppStore"
 import { useAuthStore } from "@/store/useAuthStore"
 import { useSettingsStore } from "@/store/useSettingsStore"
@@ -147,6 +149,10 @@ export default function KanbanPage() {
         </div>
 
         <SprintControls />
+
+        <CollapsiblePanel title="📉 Sprint Burndown" defaultOpen={true}>
+          <BurndownChart />
+        </CollapsiblePanel>
 
         <DndContext collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
           <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:12 }}>

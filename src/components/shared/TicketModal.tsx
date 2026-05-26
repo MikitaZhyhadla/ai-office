@@ -4,11 +4,14 @@ import { useAppStore } from "@/store/useAppStore"
 import { useSettingsStore } from "@/store/useSettingsStore"
 import { pushTicketToJira, pushTicketToAzure } from "@/lib/pushTicket"
 import { qaTestCaseAgent } from "@/agents/qaTestCaseAgent"
+import { devPromptAgent } from "@/agents/devPromptAgent"
+import { sdetPromptAgent } from "@/agents/sdetPromptAgent"
 import { DoDChecklistModal } from "./DoDChecklistModal"
 import { TestCasePanel } from "./TestCasePanel"
 import { BugReportView } from "./BugReportView"
 import { TechNotesPanel } from "./TechNotesPanel"
 import { MoSCoWBadge } from "./MoSCoWBadge"
+import { GeneratedPromptPanel } from "./GeneratedPromptPanel"
 import type { GWTRequirement, ClassicRequirement, KanbanColumn, TicketHistoryEntry } from "@/types"
 
 interface TicketModalProps {
@@ -64,6 +67,8 @@ export function TicketModal({ ticketId, onClose }: TicketModalProps) {
   const isJiraConfigured  = jira.enabled  && !!jira.baseUrl  && !!jira.projectKey && !!jira.apiToken  && !!jira.userEmail
   const isAzureConfigured = azure.enabled && !!azure.orgUrl  && !!azure.project   && !!azure.patToken
 
+  const generateSDETVerdict = useAppStore(s => s.generateSDETVerdict)
+
   const [activeTab, setActiveTab] = useState<Tab>("requirements")
   const [isReopening, setIsReopening] = useState(false)
   const [jiraPushState,  setJiraPushState]  = useState<"idle" | "loading" | "error">("idle")
@@ -71,6 +76,10 @@ export function TicketModal({ ticketId, onClose }: TicketModalProps) {
   const [jiraError,  setJiraError]  = useState<string | null>(null)
   const [azureError, setAzureError] = useState<string | null>(null)
   const [dodModalOpen, setDodModalOpen] = useState(false)
+  const [isGeneratingSdet,      setIsGeneratingSdet]      = useState(false)
+  const [isGeneratingDevPrompt, setIsGeneratingDevPrompt] = useState(false)
+  const [isGeneratingTestPrompt,setIsGeneratingTestPrompt]= useState(false)
+  const [shownPrompt, setShownPrompt] = useState<{ type: 'dev' | 'test'; content: string } | null>(null)
 
   const handleKey = useCallback((e: KeyboardEvent) => {
     if (e.key === "Escape") onClose()
@@ -436,88 +445,154 @@ export function TicketModal({ ticketId, onClose }: TicketModalProps) {
           {/* Verdicts tab */}
           {activeTab === "verdicts" && (
             <div>
-              {(ticket.qaVerdict || ticket.devVerdict) ? (
-                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12 }}>
 
-                  {/* QA card */}
-                  {ticket.qaVerdict ? (
-                    <div style={{ background:"#f8fff8", border:"1px solid #b8e8b8", borderRadius:10, padding:14 }}>
-                      <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:12 }}>
-                        <div style={{ width:34, height:34, borderRadius:"50%", background:"#0F6E56",
-                                      display:"flex", alignItems:"center", justifyContent:"center",
-                                      fontSize:11, fontWeight:700, color:"#fff", flexShrink:0 }}>QL</div>
-                        <div>
-                          <div style={{ fontSize:12, fontWeight:600 }}>QA Lead</div>
-                          <div style={{ fontSize:11, color: ticket.qaVerdict.testable ? "#0F6E56" : "#791F1F" }}>
-                            {ticket.qaVerdict.testable ? "✓ Testable" : "✗ Not testable"}
-                          </div>
+                {/* QA card */}
+                {ticket.qaVerdict ? (
+                  <div style={{ background:"#f0fdf4", border:"1px solid #bbf7d0", borderRadius:10, padding:14 }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:12 }}>
+                      <div style={{ width:34, height:34, borderRadius:"50%", background:"#0F6E56",
+                                    display:"flex", alignItems:"center", justifyContent:"center",
+                                    fontSize:11, fontWeight:700, color:"#fff", flexShrink:0 }}>QL</div>
+                      <div>
+                        <div style={{ fontSize:12, fontWeight:600 }}>QA Lead</div>
+                        <div style={{ fontSize:11, color: ticket.qaVerdict.testable ? "#0F6E56" : "#791F1F" }}>
+                          {ticket.qaVerdict.testable ? "✓ Testable" : "✗ Not testable"}
                         </div>
                       </div>
-                      <div style={{ fontSize:12, color:"#555", lineHeight:1.6, marginBottom:10 }}>
-                        {ticket.qaVerdict.summary}
-                      </div>
-                      {ticket.qaVerdict.issues.length > 0 && (
-                        <div style={{ display:"flex", flexWrap:"wrap", gap:5 }}>
-                          {ticket.qaVerdict.issues.map((issue, i) => (
-                            <span key={i} style={{ fontSize:10, padding:"2px 8px", borderRadius:20,
-                                                   background:"#FAEEDA", color:"#854F0B", border:"1px solid #e8c97a" }}>
-                              {issue}
-                            </span>
-                          ))}
-                        </div>
-                      )}
                     </div>
-                  ) : (
-                    <div style={{ background:"#f8fff8", border:"1px solid #b8e8b8", borderRadius:10,
-                                  padding:14, display:"flex", alignItems:"center", justifyContent:"center",
-                                  color:"#aaa", fontSize:12 }}>No QA verdict</div>
-                  )}
+                    <div style={{ fontSize:12, color:"#555", lineHeight:1.6, marginBottom:10 }}>
+                      {ticket.qaVerdict.summary}
+                    </div>
+                    {ticket.qaVerdict.issues.length > 0 && (
+                      <div style={{ display:"flex", flexWrap:"wrap", gap:5 }}>
+                        {ticket.qaVerdict.issues.map((issue, i) => (
+                          <span key={i} style={{ fontSize:10, padding:"2px 8px", borderRadius:20,
+                                                 background:"#FAEEDA", color:"#854F0B", border:"1px solid #e8c97a" }}>
+                            {issue}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div style={{ background:"#f0fdf4", border:"1px solid #bbf7d0", borderRadius:10,
+                                padding:14, display:"flex", alignItems:"center", justifyContent:"center",
+                                color:"#aaa", fontSize:12 }}>No QA verdict</div>
+                )}
 
-                  {/* Dev card */}
-                  {ticket.devVerdict ? (
-                    <div style={{ background:"#FFF8F0", border:"1px solid #f0c070", borderRadius:10, padding:14 }}>
-                      <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:12 }}>
-                        <div style={{ width:34, height:34, borderRadius:"50%", background:"#854F0B",
-                                      display:"flex", alignItems:"center", justifyContent:"center",
-                                      fontSize:11, fontWeight:700, color:"#fff", flexShrink:0 }}>DL</div>
-                        <div>
-                          <div style={{ fontSize:12, fontWeight:600 }}>Dev Lead</div>
-                          <div style={{ fontSize:11, color: ticket.devVerdict.feasible ? "#0F6E56" : "#791F1F" }}>
-                            {ticket.devVerdict.feasible ? "✓ Feasible" : "✗ Not feasible"}
-                          </div>
+                {/* Dev card */}
+                {ticket.devVerdict ? (
+                  <div style={{ background:"#eff6ff", border:"1px solid #bfdbfe", borderRadius:10, padding:14 }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:12 }}>
+                      <div style={{ width:34, height:34, borderRadius:"50%", background:"#1d4ed8",
+                                    display:"flex", alignItems:"center", justifyContent:"center",
+                                    fontSize:11, fontWeight:700, color:"#fff", flexShrink:0 }}>DL</div>
+                      <div>
+                        <div style={{ fontSize:12, fontWeight:600 }}>Dev Lead</div>
+                        <div style={{ fontSize:11, color: ticket.devVerdict.feasible ? "#0F6E56" : "#791F1F" }}>
+                          {ticket.devVerdict.feasible ? "✓ Feasible" : "✗ Not feasible"}
                         </div>
-                        <span style={{ marginLeft:"auto", fontSize:10, fontWeight:600, padding:"2px 8px",
-                                       borderRadius:20, background:"#fff3dc", color:"#854F0B",
-                                       border:"1px solid #e8c97a", flexShrink:0 }}>
-                          {ticket.devVerdict.complexity}
+                      </div>
+                      <span style={{ marginLeft:"auto", fontSize:10, fontWeight:600, padding:"2px 8px",
+                                     borderRadius:20, background:"#dbeafe", color:"#1d4ed8",
+                                     border:"1px solid #bfdbfe", flexShrink:0 }}>
+                        {ticket.devVerdict.complexity}
+                      </span>
+                    </div>
+                    <div style={{ fontSize:12, color:"#555", lineHeight:1.6, marginBottom:10 }}>
+                      {ticket.devVerdict.summary}
+                    </div>
+                    {ticket.devVerdict.blockers.length > 0 && (
+                      <div style={{ display:"flex", flexWrap:"wrap", gap:5 }}>
+                        {ticket.devVerdict.blockers.map((b, i) => (
+                          <span key={i} style={{ fontSize:10, padding:"2px 8px", borderRadius:20,
+                                                 background:"#FCEBEB", color:"#791F1F", border:"1px solid #f5b8b8" }}>
+                            {b}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div style={{ background:"#eff6ff", border:"1px solid #bfdbfe", borderRadius:10,
+                                padding:14, display:"flex", alignItems:"center", justifyContent:"center",
+                                color:"#aaa", fontSize:12 }}>No Dev verdict</div>
+                )}
+
+                {/* SDET card */}
+                {ticket.sdetVerdict ? (
+                  <div style={{ background:"#faf5ff", border:"1px solid #e9d5ff", borderRadius:10, padding:14 }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:12 }}>
+                      <div style={{ width:34, height:34, borderRadius:"50%", background:"#7C3AED",
+                                    display:"flex", alignItems:"center", justifyContent:"center",
+                                    fontSize:11, fontWeight:700, color:"#fff", flexShrink:0 }}>ST</div>
+                      <div style={{ flex:1, minWidth:0 }}>
+                        <div style={{ fontSize:12, fontWeight:600 }}>🤖 SDET Agent</div>
+                        <div style={{ display:"flex", alignItems:"center", gap:5, marginTop:2 }}>
+                          <span style={{
+                            fontSize:10, fontWeight:600, padding:"1px 7px", borderRadius:20,
+                            background: ticket.sdetVerdict.automationFeasibility === 'Yes' ? '#dcfce7' : ticket.sdetVerdict.automationFeasibility === 'Partial' ? '#fef9c3' : '#fee2e2',
+                            color: ticket.sdetVerdict.automationFeasibility === 'Yes' ? '#166534' : ticket.sdetVerdict.automationFeasibility === 'Partial' ? '#854d0e' : '#991b1b',
+                          }}>
+                            {ticket.sdetVerdict.automationFeasibility}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{ fontSize:11, color:"#555", lineHeight:1.5, marginBottom:8 }}>
+                      {ticket.sdetVerdict.feasibilityReason}
+                    </div>
+                    <div style={{ display:"flex", flexWrap:"wrap", gap:4, marginBottom:8 }}>
+                      {ticket.sdetVerdict.recommendedTestTypes.map((t, i) => (
+                        <span key={i} style={{ fontSize:9, padding:"2px 7px", borderRadius:20,
+                                               background:"#ede9fe", color:"#5b21b6", border:"1px solid #ddd6fe" }}>
+                          {t}
                         </span>
-                      </div>
-                      <div style={{ fontSize:12, color:"#555", lineHeight:1.6, marginBottom:10 }}>
-                        {ticket.devVerdict.summary}
-                      </div>
-                      {ticket.devVerdict.blockers.length > 0 && (
-                        <div style={{ display:"flex", flexWrap:"wrap", gap:5 }}>
-                          {ticket.devVerdict.blockers.map((b, i) => (
-                            <span key={i} style={{ fontSize:10, padding:"2px 8px", borderRadius:20,
-                                                   background:"#FCEBEB", color:"#791F1F", border:"1px solid #f5b8b8" }}>
-                              {b}
-                            </span>
-                          ))}
-                        </div>
-                      )}
+                      ))}
                     </div>
-                  ) : (
-                    <div style={{ background:"#FFF8F0", border:"1px solid #f0c070", borderRadius:10,
-                                  padding:14, display:"flex", alignItems:"center", justifyContent:"center",
-                                  color:"#aaa", fontSize:12 }}>No Dev verdict</div>
-                  )}
-                </div>
-              ) : (
-                <div style={{ display:"flex", alignItems:"center", justifyContent:"center",
-                              height:120, color:"#aaa", fontSize:13 }}>
-                  No verdict data available
-                </div>
-              )}
+                    <div style={{ display:"flex", gap:6, flexWrap:"wrap", alignItems:"center" }}>
+                      <span style={{
+                        fontSize:10, fontWeight:600, padding:"1px 7px", borderRadius:20,
+                        background: ticket.sdetVerdict.automationPriority === 'High' ? '#fee2e2' : ticket.sdetVerdict.automationPriority === 'Medium' ? '#fef9c3' : '#f0fdf4',
+                        color: ticket.sdetVerdict.automationPriority === 'High' ? '#991b1b' : ticket.sdetVerdict.automationPriority === 'Medium' ? '#854d0e' : '#166534',
+                      }}>
+                        {ticket.sdetVerdict.automationPriority} priority
+                      </span>
+                      <span style={{ fontSize:10, color:"#7C3AED", fontWeight:500 }}>
+                        {ticket.sdetVerdict.suggestedFramework}
+                      </span>
+                    </div>
+                    {ticket.sdetVerdict.existingTestImpact && (
+                      <div style={{ marginTop:8, fontSize:10, color:"#666", lineHeight:1.5 }}>
+                        <span style={{ fontWeight:600 }}>Impact: </span>{ticket.sdetVerdict.existingTestImpact}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div style={{ background:"#faf5ff", border:"1px solid #e9d5ff", borderRadius:10,
+                                padding:14, display:"flex", flexDirection:"column", alignItems:"center",
+                                justifyContent:"center", gap:10 }}>
+                    <div style={{ fontSize:12, color:"#aaa", textAlign:"center" }}>No SDET verdict yet</div>
+                    <button
+                      onClick={async () => {
+                        setIsGeneratingSdet(true)
+                        try { await generateSDETVerdict(ticketId) } finally { setIsGeneratingSdet(false) }
+                      }}
+                      disabled={isGeneratingSdet}
+                      style={{
+                        background: isGeneratingSdet ? "#c4b5fd" : "#7C3AED",
+                        color: "#fff", border:"none", borderRadius:7,
+                        padding:"6px 14px", fontSize:11, fontWeight:600,
+                        cursor: isGeneratingSdet ? "not-allowed" : "pointer",
+                        fontFamily:"inherit",
+                      }}
+                    >
+                      {isGeneratingSdet ? "Analyzing…" : "Run SDET Analysis"}
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
@@ -618,6 +693,18 @@ export function TicketModal({ ticketId, onClose }: TicketModalProps) {
             </div>
           )}
 
+          {/* Generated prompt panel */}
+          {shownPrompt && (
+            <div style={{ padding:"0 22px 12px" }}>
+              <GeneratedPromptPanel
+                title={shownPrompt.type === 'dev' ? '⚡ Dev Implementation Prompt' : '🧪 Test Automation Prompt'}
+                content={shownPrompt.content}
+                accentColor={shownPrompt.type === 'dev' ? 'indigo' : 'purple'}
+                onClose={() => setShownPrompt(null)}
+              />
+            </div>
+          )}
+
           {/* Action row */}
           <div style={{ display:"flex", gap:8, padding:"14px 22px", flexWrap:"wrap" }}>
             {nextSt && !isResolved && (
@@ -627,6 +714,68 @@ export function TicketModal({ ticketId, onClose }: TicketModalProps) {
                 → Move to {STATUS_LABEL[nextSt]}
               </button>
             )}
+
+            {/* Dev prompt button */}
+            {ticket.ticketType !== 'bug' && (
+              <button
+                onClick={async () => {
+                  setIsGeneratingDevPrompt(true)
+                  try {
+                    const prompt = await devPromptAgent(JSON.stringify(ticket.data))
+                    updateTicket(ticket.id, { devPrompt: prompt })
+                    setShownPrompt({ type: 'dev', content: prompt })
+                  } finally { setIsGeneratingDevPrompt(false) }
+                }}
+                disabled={isGeneratingDevPrompt}
+                style={{
+                  background: isGeneratingDevPrompt ? "#dbeafe" : "#eff6ff",
+                  color: isGeneratingDevPrompt ? "#93c5fd" : "#1d4ed8",
+                  border: "1px solid #bfdbfe",
+                  borderRadius: 8, padding: "8px 14px", fontSize: 12,
+                  cursor: isGeneratingDevPrompt ? "not-allowed" : "pointer",
+                  display: "flex", alignItems: "center", gap: 5,
+                  fontFamily: "inherit", fontWeight: 500,
+                }}
+              >
+                {isGeneratingDevPrompt
+                  ? <><span style={{ display:"inline-block", animation:"spin 1s linear infinite" }}>⟳</span> Generating…</>
+                  : "⚡ Generate Dev Prompt"}
+              </button>
+            )}
+
+            {/* Test prompt button */}
+            {ticket.ticketType !== 'bug' && (() => {
+              const tcs = testCases[ticketId] ?? []
+              const disabled = isGeneratingTestPrompt || tcs.length === 0
+              return (
+                <button
+                  onClick={async () => {
+                    setIsGeneratingTestPrompt(true)
+                    try {
+                      const prompt = await sdetPromptAgent(JSON.stringify(ticket.data), tcs, ticket.sdetVerdict)
+                      updateTicket(ticket.id, { testPrompt: prompt })
+                      setShownPrompt({ type: 'test', content: prompt })
+                    } finally { setIsGeneratingTestPrompt(false) }
+                  }}
+                  disabled={disabled}
+                  title={tcs.length === 0 ? "Generate test cases first" : undefined}
+                  style={{
+                    background: disabled ? "#f5f3ff" : "#faf5ff",
+                    color: disabled ? "#c4b5fd" : "#7C3AED",
+                    border: "1px solid #e9d5ff",
+                    borderRadius: 8, padding: "8px 14px", fontSize: 12,
+                    cursor: disabled ? "not-allowed" : "pointer",
+                    display: "flex", alignItems: "center", gap: 5,
+                    fontFamily: "inherit", fontWeight: 500,
+                    opacity: tcs.length === 0 ? 0.6 : 1,
+                  }}
+                >
+                  {isGeneratingTestPrompt
+                    ? <><span style={{ display:"inline-block", animation:"spin 1s linear infinite" }}>⟳</span> Generating…</>
+                    : "🧪 Generate Test Prompt"}
+                </button>
+              )
+            })()}
             <button onClick={handleCopyJSON}
               style={{ background:"none", border:"1.5px solid #ddd", color:"#555", borderRadius:8,
                        padding:"8px 14px", fontSize:12, cursor:"pointer" }}>
