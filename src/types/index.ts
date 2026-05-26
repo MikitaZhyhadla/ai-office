@@ -28,7 +28,7 @@ export interface TestCase {
 
 export type Format = 'gwt' | 'classic' | 'bug'
 export type Priority = 'high' | 'medium' | 'low'
-export type AgentStatus = 'idle' | 'thinking' | 'working'
+export type AgentStatus = 'idle' | 'thinking' | 'typing' | 'working'
 export type KanbanColumn = 'todo' | 'inprog' | 'review' | 'done'
 export type TicketType = 'feature' | 'bug'
 export type Severity = 'critical' | 'major' | 'minor'
@@ -134,9 +134,12 @@ export interface Ticket {
 export interface Agent {
   id: string
   name: string
-  role: 'ba' | 'qa' | 'dev'
+  role: 'ba' | 'qa' | 'dev' | 'sdet'
   status: AgentStatus
   currentTask?: string
+  sessionTokens: number
+  lastActivity?: string
+  lastActivityAt?: string
 }
 export interface Sprint {
   id: string
