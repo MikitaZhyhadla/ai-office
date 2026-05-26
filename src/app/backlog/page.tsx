@@ -12,6 +12,8 @@ import { CloseSprintAndRetroButton } from "@/components/shared/CloseSprintAndRet
 import { CreateTicketModal } from "@/components/backlog/CreateTicketModal"
 import { CreateSprintModal } from "@/components/kanban/CreateSprintModal"
 import { runPrioritizationAgent } from "@/agents/prioritizationAgent"
+import { VelocityChart } from "@/components/backlog/VelocityChart"
+import { CollapsiblePanel } from "@/components/shared/CollapsiblePanel"
 import type { Ticket } from "@/types"
 
 export default function BacklogPage() {
@@ -227,6 +229,10 @@ export default function BacklogPage() {
         </div>
 
         <ResolvedItemsSection />
+
+        <CollapsiblePanel title="📊 Sprint Analytics" defaultOpen={false}>
+          <VelocityChart />
+        </CollapsiblePanel>
       </main>
 
       {showCreateModal && (

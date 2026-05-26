@@ -1,7 +1,7 @@
 "use client"
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
-import type { Ticket, Agent, Sprint, LogEntry, KanbanColumn, TicketHistoryEntry, TestCase, RetroReport } from "@/types"
+import type { Ticket, Agent, Sprint, LogEntry, KanbanColumn, TicketHistoryEntry, TestCase, RetroReport, SDETVerdict } from "@/types"
 
 function getStoreKey(): string {
   if (typeof window === 'undefined') return 'ai-office-store-guest'
@@ -45,6 +45,7 @@ interface AppState {
   closeSprint: (sprintId: string) => { resolvedCount: number; returnedCount: number; velocity: number }
   reopenTicket: (ticketId: string) => void
   resetStore: () => void
+  generateSDETVerdict: (ticketId: string) => Promise<void>
 }
 
 export const useAppStore = create<AppState>()(
@@ -248,6 +249,13 @@ export const useAppStore = create<AppState>()(
         generatingTcFor: [],
         selectedTicketId: null,
       }),
+      generateSDETVerdict: async (ticketId: string) => {
+        const { sdetAgent } = await import('@/agents/sdetAgent')
+        const ticket = useAppStore.getState().tickets.find(t => t.id === ticketId)
+        if (!ticket) return
+        const verdict: SDETVerdict = await sdetAgent(JSON.stringify(ticket.data))
+        useAppStore.getState().updateTicket(ticketId, { sdetVerdict: verdict })
+      },
     }),
     { name: getStoreKey() }
   )
