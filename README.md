@@ -2,7 +2,7 @@
 
 # 🤖 AI Office
 
-### AI-powered Requirements Pipeline Tool for Agile Teams
+### AI-Native Requirements Pipeline Tool for Agile Teams
 
 [![Next.js](https://img.shields.io/badge/Next.js-14-black?logo=next.js)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)](https://react.dev/)
@@ -17,7 +17,7 @@
 
 ## What is AI Office?
 
-**AI Office** is an agile project management tool where AI agents do the heavy lifting — converting raw ideas into structured requirements, reviewing feasibility, generating test cases, and managing your sprint lifecycle automatically.
+**AI Office** is an AI-Native agile project management tool where AI agents do the heavy lifting — converting raw ideas into structured requirements, reviewing feasibility, generating test cases, and managing your sprint lifecycle automatically.
 
 Instead of spending hours writing specs and tickets, you type a requirement in plain language and a team of specialized AI agents (BA Lead, QA Lead, Dev Lead) analyze, structure, and validate it in seconds. The result lands directly on your Kanban board as a properly formatted User Story with acceptance criteria, test cases, and story point estimates.
 
@@ -25,29 +25,23 @@ Built for **Product Managers, Business Analysts, and Agile teams** who want to m
 
 ---
 
-## 🧠 AI-First Philosophy
+## 🧠 AI-Native Philosophy
 
-AI Office is built around an **AI-First** approach — meaning AI is not a feature added on top of the product, it is the core of every workflow.
+AI Office is an **AI-Native** product — not a traditional tool with AI features added on top, but a system that exists only because of AI agents. Without them, there is nothing to use.
 
-> **The human sets the direction. The AI does the work.**
+> **AI agents are not a feature. They are the product.**
 
-Every stage of the requirements lifecycle is handled or assisted by a specialized AI agent:
+In a traditional agile tool, humans write specs, create tickets, estimate points, and run retrospectives. AI Office removes all of that from the human's plate entirely. The human provides intent — a rough idea, a bug description, a business goal. The agents do everything else: structure it, validate it, estimate it, generate tests, and report on it.
 
-| Stage | Who does it |
-|-------|-------------|
-| Write a requirement | Human (plain language, any quality) |
-| Structure into GWT / FR / NFR / AC | 🤖 BA Agent |
-| Check testability & flag ambiguities | 🤖 QA Agent |
-| Check technical feasibility | 🤖 Dev Agent |
-| Revise if issues found | 🤖 BA Agent (automatic loop) |
-| Generate test cases | 🤖 QA Agent (auto on In Progress) |
-| Generate tech notes | 🤖 Dev Agent (on demand) |
-| Prioritize backlog (MoSCoW) | 🤖 BA Agent |
-| Analyze bug reports | 🤖 QA Agent |
-| Write sprint retrospective | 🤖 Retro Agent |
-| Final approval | ✅ Human |
+| What you type | What agents produce |
+|---------------|---------------------|
+| "Make checkout faster" | Structured GWT scenarios, acceptance criteria, SP estimate, priority |
+| "Login crashes on Safari" | Bug ticket with severity, reproduction steps, expected vs actual |
+| Any ticket moved to In Progress | Full QA test case suite, auto-generated |
+| Any ticket in backlog | SDET automation verdict, Dev tech notes, implementation prompt *(Phase 5.0)* |
+| Sprint closed | Full retrospective: velocity, blockers, suggestions for next sprint |
 
-This means a single person can do the work of an entire BA/QA/Dev team for requirements — in seconds, not days. AI Office doesn't ask humans to adapt to the tool. The tool adapts to humans: accept rough input, produce structured output.
+This is the core principle of AI-Native design: the human stays in the loop for decisions and approval, but the AI does the execution. The tool gets smarter as you add context — domain area, product description, codebase — because agents use all of it automatically.
 
 ---
 
@@ -118,7 +112,7 @@ Drag-and-drop board with 4 columns (Todo → In Progress → Review → Done). O
 ### 🏃 Sprint Lifecycle Management
 Full sprint lifecycle directly from the Kanban board:
 - **Create Sprint** — name, start/end dates, smart defaults
-- **Close Sprint** — confirmation modal with velocity summary; Done tickets move to Resolved Items, unfinished tickets return to backlog
+- **Close Sprint & Generate Retro** — unified button on Kanban and Backlog; Done tickets → Resolved Items, unfinished → back to Backlog
 - **Resolved Items** — collapsible section in Backlog showing all historically completed tickets grouped by sprint
 
 ### 🧪 QA Test Cases
@@ -179,6 +173,8 @@ User types requirement
   Dev clicks Generate Tech Notes → implementation plan
         ↓
   Sprint closed → Done tickets archived in Resolved Items
+        ↓
+  Sprint Retrospective: [Sprint Name] generated automatically
 ```
 
 All agent calls route through a secure server-side proxy (`/api/agents`). Your Anthropic API key never reaches the browser.
@@ -309,29 +305,51 @@ src/
 - Pipeline state persistence (survives navigation)
 - Agent activity toast with timeout warnings
 
-### ✅ Phase 3.1 — Sprint Lifecycle (current)
+### ✅ Phase 3.1 — Sprint Lifecycle
 - **Create Sprint** from Kanban board with smart defaults
 - **Close Sprint** — confirmation modal with velocity summary
 - **Resolved Items** section in Backlog, grouped by sprint
 - Kanban board shows only in-sprint tickets
 
-### 📋 Phase 4.0 — UX Improvements & DB Integration (planned)
+### ✅ Phase 4.0 — UX Improvements
 - New Sprint button on Backlog tab
 - Unified Close Sprint & Generate Retro button (Kanban + Backlog)
 - Ticket status sync between drag-and-drop and action buttons
 - Clear requirement field on reset
 - Bug Report uses QA Agent instead of BA Agent
-- Database integration (Supabase) — migration plan documented
 
-### 📋 Phase 5.0 — Team & Collaboration (planned)
-- Real-time multiplayer (multiple users editing simultaneously)
+### ✅ Phase 4.5 — Bug Fixes & Polish
+- Agent ready badge on User Story tab + disabled Analyze button when field is empty
+- Sprint Retrospective title format fixed (no duplicate "Sprint" word)
+- Sprint Retrospective opens after Close Sprint on Kanban tab
+- App version updated to 4.5.1
+
+### 📋 Phase 5.0 — Agent Intelligence & Context (planned)
+- **Domain Area selector** in Settings — Fintech, E-commerce, Healthtech, EdTech, SaaS B2B, Marketplace and more; agents use domain context when enabled
+- **Product Context** in Settings — product description, tech stack, goals; agents use context when enabled (checkbox)
+- **GitHub Integration** — connect product repo and test repo via URL + PAT; agents read file structure and README for context
+- **SDET Agent** — new agent verdict on automation feasibility in TicketModal; complements QA and Dev verdicts
+- **Generate Dev Prompt** button in TicketModal — Dev agent generates a ready-to-use prompt for Claude Code / GitHub Copilot
+- **Generate Test Automation Prompt** button in TicketModal — SDET agent generates automation prompt based on ticket requirements
+- Velocity and burndown charts
+- Sprint analytics dashboard
+
+### 📋 Phase 6.0 — Database Integration (planned)
+- Supabase (PostgreSQL) — full schema documented in AI-Office-DB-Plan.docx
+- Auth migration from localStorage to Supabase Auth
+- Real-time ticket sync via Supabase subscriptions
+- Row Level Security (RLS) — users see only their project data
+- Data migration script for existing localStorage users
+- SDET agent data persisted in tickets table
+
+### 📋 Phase 7.0 — Team & Collaboration (planned, requires Phase 6.0)
+- Real-time multiplayer — multiple users editing simultaneously
 - Comments and @mentions on tickets
 - Slack / Teams notifications
-- Velocity and burndown charts
-- Advanced analytics dashboard
-- Custom agent personas
+- Role-based access control (BA / QA / Dev / SDET / Admin)
+- Advanced cross-user analytics dashboard
 - Public API for external integrations
-- Role-based access control (BA / QA / Dev / Admin)
+- Custom agent personas per project
 
 ---
 
