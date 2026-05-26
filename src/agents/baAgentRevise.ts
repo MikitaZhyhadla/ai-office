@@ -1,8 +1,9 @@
 import { callAgent } from "./callAgent"
 import { stripJsonFences } from '@/lib/parseJson'
+import { buildAgentContext } from '@/lib/buildAgentContext'
 import type { GWTRequirement, ClassicRequirement } from "@/types"
 
-const SYSTEM = `You are a Senior BA agent. You receive an original software requirement and a list of issues flagged by QA and Dev agents. Rewrite the requirement to address ALL listed issues. Return ONLY valid JSON matching the original format exactly, no markdown.`
+const BASE_SYSTEM = `You are a Senior BA agent. You receive an original software requirement and a list of issues flagged by QA and Dev agents. Rewrite the requirement to address ALL listed issues. Return ONLY valid JSON matching the original format exactly, no markdown.`
 
 export async function baAgentRevise(
   original: GWTRequirement | ClassicRequirement,
@@ -21,6 +22,8 @@ export async function baAgentRevise(
 
   const userMessage = `Original requirement:\n${JSON.stringify(original, null, 2)}\n\n${issueList}\n\nRewrite the requirement to address all issues above.\n${schemaHint}`
 
+  const contextBlock = buildAgentContext()
+  const SYSTEM = contextBlock ? `${contextBlock}\n\n---\n\n${BASE_SYSTEM}` : BASE_SYSTEM
   const text = await callAgent(SYSTEM, userMessage)
   try {
     return JSON.parse(stripJsonFences(text)) as GWTRequirement | ClassicRequirement

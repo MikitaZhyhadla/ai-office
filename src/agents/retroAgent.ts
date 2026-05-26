@@ -1,5 +1,6 @@
 import { callAgent } from "./callAgent"
 import { stripJsonFences } from '@/lib/parseJson'
+import { buildAgentContext } from '@/lib/buildAgentContext'
 import type { RetroReport } from "@/types"
 
 interface SprintAgentInput {
@@ -21,7 +22,7 @@ interface SprintAgentInput {
   }>
 }
 
-const SYSTEM = `You are Alice BA, a senior business analyst specialising in agile retrospectives.
+const BASE_SYSTEM = `You are Alice BA, a senior business analyst specialising in agile retrospectives.
 You receive sprint data from AI Office — a requirements pipeline tool.
 Analyse the sprint and produce a structured retrospective report.
 Your tone is professional, constructive, and specific. Avoid generic advice.
@@ -73,6 +74,8 @@ agentInsights: A 3-5 sentence paragraph with your overall assessment of the spri
 
 export async function runRetroAgent(sprintData: SprintAgentInput): Promise<RetroReport> {
   const userPrompt = buildUserPrompt(sprintData)
+  const contextBlock = buildAgentContext()
+  const SYSTEM = contextBlock ? `${contextBlock}\n\n---\n\n${BASE_SYSTEM}` : BASE_SYSTEM
   const raw = await callAgent(SYSTEM, userPrompt)
   try {
     return JSON.parse(stripJsonFences(raw)) as RetroReport

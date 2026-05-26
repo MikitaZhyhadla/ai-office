@@ -1,8 +1,9 @@
 import { callAgent } from "./callAgent"
 import { stripJsonFences } from '@/lib/parseJson'
+import { buildAgentContext } from '@/lib/buildAgentContext'
 import type { BugReport, Severity } from "@/types"
 
-const SYSTEM = `You are QA Lead, a senior quality assurance engineer specialising in bug classification and defect analysis.
+const BASE_SYSTEM = `You are QA Lead, a senior quality assurance engineer specialising in bug classification and defect analysis.
 You receive a natural-language bug report and convert it into a structured, developer-ready bug ticket.
 Extract or infer all fields from the text. Be specific and actionable.
 stepsToReproduce must be a numbered list of concrete steps — at least 2 items.
@@ -36,6 +37,9 @@ Return a JSON object with this exact schema:
   "actualBehavior": string,
   "affectedArea": string
 }`
+
+  const contextBlock = buildAgentContext()
+  const SYSTEM = contextBlock ? `${contextBlock}\n\n---\n\n${BASE_SYSTEM}` : BASE_SYSTEM
 
   try {
     const raw = await callAgent(SYSTEM, userPrompt)

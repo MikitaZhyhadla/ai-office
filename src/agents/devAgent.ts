@@ -1,5 +1,6 @@
 import { callAgent } from "./callAgent"
 import { stripJsonFences } from '@/lib/parseJson'
+import { buildAgentContext } from '@/lib/buildAgentContext'
 
 export interface DevVerdict {
   feasible: boolean
@@ -9,7 +10,7 @@ export interface DevVerdict {
   summary: string
 }
 
-const SYSTEM = `You are a Dev Lead agent. Check if requirements are feasible.
+const BASE_SYSTEM = `You are a Dev Lead agent. Check if requirements are feasible.
 Return ONLY valid JSON:
 {
   "feasible": true,
@@ -20,6 +21,8 @@ Return ONLY valid JSON:
 }`
 
 export async function devAgent(requirement: string): Promise<DevVerdict> {
+  const contextBlock = buildAgentContext()
+  const SYSTEM = contextBlock ? `${contextBlock}\n\n---\n\n${BASE_SYSTEM}` : BASE_SYSTEM
   const text = await callAgent(SYSTEM, `Check feasibility:\n\n${requirement}`)
   try {
     return JSON.parse(stripJsonFences(text)) as DevVerdict

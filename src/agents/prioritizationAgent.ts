@@ -1,8 +1,9 @@
 import { callAgent } from "./callAgent"
 import { stripJsonFences } from '@/lib/parseJson'
+import { buildAgentContext } from '@/lib/buildAgentContext'
 import type { Ticket, PrioritizationReport } from "@/types"
 
-const SYSTEM = `You are Alice BA, a senior business analyst and agile coach specialising in backlog prioritization.
+const BASE_SYSTEM = `You are Alice BA, a senior business analyst and agile coach specialising in backlog prioritization.
 You receive a list of backlog tickets and sprint context, and assign MoSCoW categories to each.
 MoSCoW definitions:
 - must: Critical for the sprint goal. Without this, the sprint fails. Deliver at all costs.
@@ -64,6 +65,8 @@ export async function runPrioritizationAgent(
   totalSprintSP: number
 ): Promise<PrioritizationReport> {
   const userPrompt = buildUserPrompt(tickets, sprintName, sprintDates, projectDescription, totalSprintSP)
+  const contextBlock = buildAgentContext()
+  const SYSTEM = contextBlock ? `${contextBlock}\n\n---\n\n${BASE_SYSTEM}` : BASE_SYSTEM
   const raw = await callAgent(SYSTEM, userPrompt)
   try {
     const parsed = JSON.parse(stripJsonFences(raw)) as PrioritizationReport

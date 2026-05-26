@@ -10,8 +10,22 @@ const MODELS = [
   { id: 'claude-opus-4-5-20250514',    name: 'Claude Opus 4.5',   desc: 'Highest quality · Slowest' },
 ]
 
+const DOMAIN_OPTIONS = [
+  { value: 'fintech',     label: 'Fintech',           description: 'Financial services, payments, banking, lending, insurance, crypto' },
+  { value: 'ecommerce',   label: 'E-commerce',         description: 'Online retail, marketplaces, product catalogs, checkout, fulfillment' },
+  { value: 'healthtech',  label: 'Healthtech',          description: 'Healthcare software, EHR, telemedicine, medical devices, patient data' },
+  { value: 'edtech',      label: 'EdTech',              description: 'Online learning, LMS, courses, student/teacher workflows' },
+  { value: 'saas_b2b',    label: 'SaaS B2B',            description: 'Business software, subscriptions, multi-tenant, enterprise features' },
+  { value: 'marketplace', label: 'Marketplace',         description: 'Two-sided platforms, buyer/seller flows, ratings, payments' },
+  { value: 'logistics',   label: 'Logistics',           description: 'Supply chain, delivery tracking, warehousing, fleet management' },
+  { value: 'hrtech',      label: 'HR Tech',             description: 'Recruiting, onboarding, payroll, performance management' },
+  { value: 'devtools',    label: 'Developer Tools',     description: 'IDEs, CLIs, APIs, SDKs, developer platforms' },
+  { value: 'custom',      label: 'Other / Custom',      description: '' },
+]
+
 const NAV_SECTIONS = [
   { heading: 'GENERAL',      items: [{ id: 'project', label: 'Project Info' }, { id: 'model', label: 'AI Model' }] },
+  { heading: 'AI CONTEXT',   items: [{ id: 'product-context', label: 'Product Context' }, { id: 'domain-area', label: 'Domain Area' }] },
   { heading: 'INTEGRATIONS', items: [{ id: 'webhooks', label: 'Webhooks' }] },
   { heading: 'WORKFLOW',     items: [{ id: 'dod', label: 'Definition of Done' }] },
   { heading: 'INFO',         items: [{ id: 'about', label: 'About' }] },
@@ -467,6 +481,152 @@ function DodSection() {
   )
 }
 
+// ─── Product Context Section (F-02) ─────────────────────────────────────────
+function ProductContextSection() {
+  const {
+    productContextEnabled, setProductContextEnabled,
+    productDescription, setProductDescription,
+    techStack, setTechStack,
+    targetUsers, setTargetUsers,
+    keyConstraints, setKeyConstraints,
+  } = useSettingsStore()
+
+  return (
+    <div id="product-context" style={card}>
+      <SectionTitle>Product Context</SectionTitle>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+        <input
+          type="checkbox"
+          id="productContextEnabled"
+          checked={productContextEnabled}
+          onChange={e => setProductContextEnabled(e.target.checked)}
+          style={{ accentColor: '#534AB7', width: 15, height: 15, cursor: 'pointer' }}
+        />
+        <label htmlFor="productContextEnabled" style={{ fontSize: 13, color: '#333', cursor: 'pointer', userSelect: 'none' }}>
+          Include product context in agent analysis
+        </label>
+      </div>
+
+      <div style={{ opacity: productContextEnabled ? 1 : 0.5, pointerEvents: productContextEnabled ? 'auto' : 'none' }}>
+        <div style={{ marginBottom: 16 }}>
+          <span style={label}>Product Description</span>
+          <textarea
+            rows={3}
+            style={{ ...input, resize: 'vertical' }}
+            value={productDescription}
+            onChange={e => setProductDescription(e.target.value)}
+            placeholder="What does your product do? Describe its purpose."
+          />
+        </div>
+
+        <div style={{ marginBottom: 16 }}>
+          <span style={label}>Tech Stack</span>
+          <input
+            style={input}
+            value={techStack}
+            onChange={e => setTechStack(e.target.value)}
+            placeholder="Next.js 14, PostgreSQL, AWS, React Native"
+          />
+        </div>
+
+        <div style={{ marginBottom: 16 }}>
+          <span style={label}>Target Users</span>
+          <input
+            style={input}
+            value={targetUsers}
+            onChange={e => setTargetUsers(e.target.value)}
+            placeholder="B2B SaaS, enterprise teams of 10–200 people"
+          />
+        </div>
+
+        <div>
+          <span style={label}>Key Constraints</span>
+          <input
+            style={input}
+            value={keyConstraints}
+            onChange={e => setKeyConstraints(e.target.value)}
+            placeholder="GDPR compliance required, mobile-first, offline support"
+          />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Domain Area Section (F-01) ───────────────────────────────────────────────
+function DomainAreaSection() {
+  const {
+    domainEnabled, setDomainEnabled,
+    selectedDomain, setSelectedDomain,
+    customDomain, setCustomDomain,
+  } = useSettingsStore()
+
+  const selected = DOMAIN_OPTIONS.find(d => d.value === selectedDomain)
+
+  return (
+    <div id="domain-area" style={card}>
+      <SectionTitle>Domain Area</SectionTitle>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+        <input
+          type="checkbox"
+          id="domainEnabled"
+          checked={domainEnabled}
+          onChange={e => setDomainEnabled(e.target.checked)}
+          style={{ accentColor: '#534AB7', width: 15, height: 15, cursor: 'pointer' }}
+        />
+        <label htmlFor="domainEnabled" style={{ fontSize: 13, color: '#333', cursor: 'pointer', userSelect: 'none' }}>
+          Enable domain context for agents
+        </label>
+      </div>
+
+      <div style={{ opacity: domainEnabled ? 1 : 0.5, pointerEvents: domainEnabled ? 'auto' : 'none' }}>
+        <div style={{ marginBottom: 12 }}>
+          <span style={label}>Domain</span>
+          <select
+            style={{ ...input, cursor: 'pointer' }}
+            value={selectedDomain}
+            onChange={e => setSelectedDomain(e.target.value)}
+          >
+            <option value="">— Select a domain —</option>
+            {DOMAIN_OPTIONS.map(d => (
+              <option key={d.value} value={d.value}>{d.label}</option>
+            ))}
+          </select>
+        </div>
+
+        {selectedDomain && selectedDomain !== 'custom' && selected?.description && (
+          <div style={{
+            background: '#f9f9ff',
+            borderLeft: '4px solid #534AB7',
+            padding: '8px 12px',
+            borderRadius: '0 6px 6px 0',
+            fontSize: 12,
+            color: '#666',
+            fontStyle: 'italic',
+          }}>
+            {selected.description}
+          </div>
+        )}
+
+        {selectedDomain === 'custom' && (
+          <div>
+            <span style={label}>Custom Domain Description</span>
+            <textarea
+              rows={3}
+              style={{ ...input, resize: 'vertical' }}
+              value={customDomain}
+              onChange={e => setCustomDomain(e.target.value)}
+              placeholder="Describe your domain area..."
+            />
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ─── About Section ───────────────────────────────────────────────────────────
 function AboutSection() {
   return (
@@ -556,6 +716,8 @@ export default function SettingsPage() {
         </h1>
         <ProjectSection />
         <ModelSection />
+        <ProductContextSection />
+        <DomainAreaSection />
         <WebhooksSection />
         <DodSection />
         <AboutSection />

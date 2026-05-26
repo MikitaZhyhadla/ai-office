@@ -1,5 +1,6 @@
 import { callAgent } from "./callAgent"
 import { stripJsonFences } from '@/lib/parseJson'
+import { buildAgentContext } from '@/lib/buildAgentContext'
 
 export interface QAVerdict {
   testable: boolean
@@ -8,7 +9,7 @@ export interface QAVerdict {
   summary: string
 }
 
-const SYSTEM = `You are a QA Lead agent. Analyze if requirements are testable.
+const BASE_SYSTEM = `You are a QA Lead agent. Analyze if requirements are testable.
 Return ONLY valid JSON:
 {
   "testable": true,
@@ -18,6 +19,8 @@ Return ONLY valid JSON:
 }`
 
 export async function qaAgent(requirement: string): Promise<QAVerdict> {
+  const contextBlock = buildAgentContext()
+  const SYSTEM = contextBlock ? `${contextBlock}\n\n---\n\n${BASE_SYSTEM}` : BASE_SYSTEM
   const text = await callAgent(SYSTEM, `Analyze testability:\n\n${requirement}`)
   try {
     return JSON.parse(stripJsonFences(text)) as QAVerdict
