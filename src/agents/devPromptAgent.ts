@@ -6,5 +6,5 @@ const BASE_SYSTEM = `You are a senior developer writing an implementation prompt
 export async function devPromptAgent(requirement: string): Promise<string> {
   const contextBlock = buildAgentContext()
   const SYSTEM = contextBlock ? `${contextBlock}\n\n---\n\n${BASE_SYSTEM}` : BASE_SYSTEM
-  return callAgent(SYSTEM, `Generate implementation prompt for this ticket:\n\n${requirement}`, 1500)
+  return callAgent(SYSTEM, `Generate implementation prompt for this ticket:\n\n${requirement}`, 'devLead', 1500)
 }

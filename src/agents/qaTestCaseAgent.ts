@@ -47,7 +47,7 @@ ${reqText}`
 
   const contextBlock = buildAgentContext()
   const SYSTEM = contextBlock ? `${contextBlock}\n\n---\n\n${BASE_SYSTEM}` : BASE_SYSTEM
-  const text = await callAgent(SYSTEM, userMessage)
+  const text = await callAgent(SYSTEM, userMessage, 'qaLead')
   try {
     const parsed = JSON.parse(stripJsonFences(text)) as { testCases: TestCase[] }
     return parsed.testCases
@@ -61,7 +61,7 @@ export async function qaTestCaseAgentFromString(requirement: string): Promise<Te
   const userMessage = `Generate test cases for this requirement:\n${requirement}`
   const contextBlock = buildAgentContext()
   const SYSTEM = contextBlock ? `${contextBlock}\n\n---\n\n${BASE_SYSTEM}` : BASE_SYSTEM
-  const text = await callAgent(SYSTEM, userMessage)
+  const text = await callAgent(SYSTEM, userMessage, 'qaLead')
   try {
     const parsed = JSON.parse(stripJsonFences(text)) as { testCases: TestCase[] }
     return parsed.testCases

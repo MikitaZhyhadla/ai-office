@@ -42,7 +42,7 @@ Return a JSON object with this exact schema:
   const SYSTEM = contextBlock ? `${contextBlock}\n\n---\n\n${BASE_SYSTEM}` : BASE_SYSTEM
 
   try {
-    const raw = await callAgent(SYSTEM, userPrompt)
+    const raw = await callAgent(SYSTEM, userPrompt, 'qaLead')
     return JSON.parse(stripJsonFences(raw)) as BugReport
   } catch (e) {
     console.error('bugAgent raw response:', e)

@@ -305,7 +305,7 @@ export default function PixelOfficePage() {
                 <div style={{ width: '5px', height: '5px', background: '#0f6e56', borderRadius: '50%', animation: 'po-dotpulse 1.5s infinite' }} />
                 live
               </div>
-              <div style={{ color: '#2a2848' }}>v4.5.1</div>
+              <div style={{ color: '#2a2848' }}>v5.5</div>
             </div>
           </div>
         </div>

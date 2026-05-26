@@ -23,7 +23,7 @@ Return ONLY valid JSON:
 export async function devAgent(requirement: string): Promise<DevVerdict> {
   const contextBlock = buildAgentContext()
   const SYSTEM = contextBlock ? `${contextBlock}\n\n---\n\n${BASE_SYSTEM}` : BASE_SYSTEM
-  const text = await callAgent(SYSTEM, `Check feasibility:\n\n${requirement}`)
+  const text = await callAgent(SYSTEM, `Check feasibility:\n\n${requirement}`, 'devLead')
   try {
     return JSON.parse(stripJsonFences(text)) as DevVerdict
   } catch (e) {
