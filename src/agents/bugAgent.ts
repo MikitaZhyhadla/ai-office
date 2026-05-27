@@ -1,5 +1,4 @@
-import { callAgent } from "./callAgent"
-import { stripJsonFences } from '@/lib/parseJson'
+import { callAgent, safeParseJson } from "./callAgent"
 import { buildAgentContext } from '@/lib/buildAgentContext'
 import type { BugReport, Severity } from "@/types"
 
@@ -41,11 +40,6 @@ Return a JSON object with this exact schema:
   const contextBlock = buildAgentContext()
   const SYSTEM = contextBlock ? `${contextBlock}\n\n---\n\n${BASE_SYSTEM}` : BASE_SYSTEM
 
-  try {
-    const raw = await callAgent(SYSTEM, userPrompt, 'qaLead')
-    return JSON.parse(stripJsonFences(raw)) as BugReport
-  } catch (e) {
-    console.error('bugAgent raw response:', e)
-    throw new Error('BugAgent: failed to parse response')
-  }
+  const raw = await callAgent(SYSTEM, userPrompt, 'qaLead')
+  return safeParseJson<BugReport>(raw)
 }

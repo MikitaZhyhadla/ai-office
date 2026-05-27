@@ -1,5 +1,4 @@
-import { callAgent } from "./callAgent"
-import { stripJsonFences } from '@/lib/parseJson'
+import { callAgent, safeParseJson } from "./callAgent"
 import { buildAgentContext } from '@/lib/buildAgentContext'
 import type { TestCase, GWTRequirement, ClassicRequirement, Format } from "@/types"
 
@@ -48,13 +47,7 @@ ${reqText}`
   const contextBlock = buildAgentContext()
   const SYSTEM = contextBlock ? `${contextBlock}\n\n---\n\n${BASE_SYSTEM}` : BASE_SYSTEM
   const text = await callAgent(SYSTEM, userMessage, 'qaLead')
-  try {
-    const parsed = JSON.parse(stripJsonFences(text)) as { testCases: TestCase[] }
-    return parsed.testCases
-  } catch (e) {
-    console.error('qaTestCaseAgent raw response:', text)
-    throw new Error('qaTestCaseAgent: failed to parse response')
-  }
+  return safeParseJson<{ testCases: TestCase[] }>(text).testCases
 }
 
 export async function qaTestCaseAgentFromString(requirement: string): Promise<TestCase[]> {
@@ -62,11 +55,5 @@ export async function qaTestCaseAgentFromString(requirement: string): Promise<Te
   const contextBlock = buildAgentContext()
   const SYSTEM = contextBlock ? `${contextBlock}\n\n---\n\n${BASE_SYSTEM}` : BASE_SYSTEM
   const text = await callAgent(SYSTEM, userMessage, 'qaLead')
-  try {
-    const parsed = JSON.parse(stripJsonFences(text)) as { testCases: TestCase[] }
-    return parsed.testCases
-  } catch (e) {
-    console.error('qaTestCaseAgent raw response:', text)
-    throw new Error('qaTestCaseAgent: failed to parse response')
-  }
+  return safeParseJson<{ testCases: TestCase[] }>(text).testCases
 }

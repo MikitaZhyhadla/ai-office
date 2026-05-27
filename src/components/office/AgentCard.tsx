@@ -2,6 +2,7 @@
 
 import React from 'react'
 import type { Agent } from '@/types'
+import { useSettingsStore, type SettingsState } from '@/store/useSettingsStore'
 
 interface AgentCardProps {
   agent: Agent
@@ -25,13 +26,39 @@ const STATUS_DOT_COLORS: Record<string, string> = {
   working: '#854f0b',
 }
 
+const AGENT_ID_MAP: Partial<Record<string, keyof SettingsState['agentModels']>> = {
+  alice: 'aliceBA',
+  bob:   'bobBA',
+  qa1:   'qaLead',
+  dev1:  'devLead',
+  sdet1: 'sdetAgent',
+}
+
+function shortModelName(full: string): string {
+  if (full.includes('haiku'))  return 'haiku-4-5'
+  if (full.includes('sonnet')) return 'sonnet-4'
+  if (full.includes('opus'))   return 'opus-4'
+  return full
+}
+
 const MAX_SESSION_TOKENS = 3000
 
 export function AgentCard({ agent, isComingSoon = false, onClick }: AgentCardProps) {
+  const settings = useSettingsStore()
   const rc = ROLE_COLORS[agent.role]
   const isActive = agent.status !== 'idle' && !isComingSoon
   const pct = Math.min(100, Math.round(((agent.sessionTokens || 0) / MAX_SESSION_TOKENS) * 100))
   const dotColor = STATUS_DOT_COLORS[agent.status] || '#2a2848'
+
+  function getModelDisplay(): string {
+    const key = AGENT_ID_MAP[agent.id]
+    if (settings.agentModelOverride && key && settings.agentModels?.[key]) {
+      return shortModelName(settings.agentModels[key])
+    }
+    return shortModelName(settings.model || 'claude-haiku-4-5-20251001')
+  }
+
+  const modelDisplay = getModelDisplay()
 
   return (
     <div
@@ -82,7 +109,7 @@ export function AgentCard({ agent, isComingSoon = false, onClick }: AgentCardPro
         <>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3px 6px', marginBottom: '4px' }}>
             {([
-              ['MODEL', agent.currentTask ? (agent.role === 'dev' ? 'sonnet-4' : 'haiku-4-5') : 'haiku-4-5', isActive],
+              ['MODEL', modelDisplay, isActive],
               ['STATUS', agent.status, isActive],
               ['TOKENS', (agent.sessionTokens || 0).toLocaleString(), false],
               ['TASK', agent.currentTask || '—', false],

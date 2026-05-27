@@ -3,15 +3,17 @@ import { useAuthStore } from '@/store/useAuthStore'
 import { TeamMemberRow } from './TeamMemberRow'
 
 const AI_AGENTS = [
-  { name: 'Alice BA',  role: 'BA',  type: 'ai' as const },
-  { name: 'Bob BA',    role: 'BA',  type: 'ai' as const },
-  { name: 'QA Lead',   role: 'QA',  type: 'ai' as const },
-  { name: 'Dev Lead',  role: 'Dev', type: 'ai' as const },
+  { name: 'Alice BA',   role: 'BA',   type: 'ai' as const },
+  { name: 'Bob BA',     role: 'BA',   type: 'ai' as const },
+  { name: 'QA Lead',    role: 'QA',   type: 'ai' as const },
+  { name: 'Dev Lead',   role: 'Dev',  type: 'ai' as const },
+  { name: 'SDET Agent', role: 'SDET', type: 'ai' as const },
 ]
 
 const DEPARTMENT_LABELS: Record<string, string> = {
   BA:             'BA Team',
   QA:             'QA Department',
+  SDET:           'QA Department',
   Dev:            'Dev Team',
   Developer:      'Dev Team',
   Manager:        'Management',

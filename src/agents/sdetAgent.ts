@@ -1,5 +1,4 @@
-import { callAgent } from "./callAgent"
-import { stripJsonFences } from '@/lib/parseJson'
+import { callAgent, safeParseJson } from "./callAgent"
 import { buildAgentContext } from '@/lib/buildAgentContext'
 import type { SDETVerdict } from '@/types'
 
@@ -16,11 +15,6 @@ const BASE_SYSTEM = `You are an SDET (Software Development Engineer in Test) age
 export async function sdetAgent(requirement: string): Promise<SDETVerdict> {
   const contextBlock = buildAgentContext()
   const SYSTEM = contextBlock ? `${contextBlock}\n\n---\n\n${BASE_SYSTEM}` : BASE_SYSTEM
-  const text = await callAgent(SYSTEM, `Analyze automation feasibility:\n\n${requirement}`)
-  try {
-    return JSON.parse(stripJsonFences(text)) as SDETVerdict
-  } catch (e) {
-    console.error('sdetAgent raw response:', text)
-    throw new Error('sdetAgent: failed to parse response')
-  }
+  const text = await callAgent(SYSTEM, `Analyze automation feasibility:\n\n${requirement}`, 'sdetAgent')
+  return safeParseJson<SDETVerdict>(text)
 }
