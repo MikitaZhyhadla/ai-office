@@ -179,7 +179,7 @@ function ModelSection() {
 
   function handleOverrideToggle(val: boolean) {
     if (val) {
-      const keys: Array<keyof typeof agentModels> = ['aliceBA', 'bobBA', 'qaLead', 'devLead']
+      const keys: Array<keyof typeof agentModels> = ['aliceBA', 'bobBA', 'qaLead', 'devLead', 'sdetAgent']
       keys.forEach(k => setAgentModel(k, model || 'claude-haiku-4-5-20251001'))
     }
     setAgentModelOverride(val)
@@ -308,18 +308,18 @@ function ModelSection() {
             role="SDET"
             roleBg="#E6F1FB"
             roleColor="#185FA5"
-            modelValue="claude-haiku-4-5-20251001"
-            onModelChange={() => {}}
-            estimatedCost="phase 5"
-            isPhase5
+            modelValue={agentModels.sdetAgent}
+            onModelChange={(val) => setAgentModel('sdetAgent', val)}
+            estimatedCost={`~$${computeCost(agentModels.sdetAgent).toFixed(4)}`}
           />
 
           <CostEstimator
             rows={[
-              { name: 'Alice BA',  model: agentModels.aliceBA,  cost: computeCost(agentModels.aliceBA) },
-              { name: 'Bob BA',    model: agentModels.bobBA,    cost: computeCost(agentModels.bobBA) },
-              { name: 'QA Lead',   model: agentModels.qaLead,   cost: computeCost(agentModels.qaLead) },
-              { name: 'Dev Lead',  model: agentModels.devLead,  cost: computeCost(agentModels.devLead) },
+              { name: 'Alice BA',   model: agentModels.aliceBA,   cost: computeCost(agentModels.aliceBA) },
+              { name: 'Bob BA',     model: agentModels.bobBA,     cost: computeCost(agentModels.bobBA) },
+              { name: 'QA Lead',    model: agentModels.qaLead,    cost: computeCost(agentModels.qaLead) },
+              { name: 'Dev Lead',   model: agentModels.devLead,   cost: computeCost(agentModels.devLead) },
+              { name: 'SDET Agent', model: agentModels.sdetAgent, cost: computeCost(agentModels.sdetAgent) },
             ]}
           />
         </div>

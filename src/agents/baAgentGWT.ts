@@ -1,5 +1,4 @@
-import { callAgent } from "./callAgent"
-import { stripJsonFences } from '@/lib/parseJson'
+import { callAgent, safeParseJson } from "./callAgent"
 import { buildAgentContext } from '@/lib/buildAgentContext'
 import type { GWTRequirement } from "@/types"
 
@@ -19,10 +18,5 @@ export async function baAgentGWT(rawRequirement: string): Promise<GWTRequirement
   const contextBlock = buildAgentContext()
   const SYSTEM = contextBlock ? `${contextBlock}\n\n---\n\n${BASE_SYSTEM}` : BASE_SYSTEM
   const text = await callAgent(SYSTEM, `Convert this requirement:\n\n${rawRequirement}`, 'aliceBA')
-  try {
-    return JSON.parse(stripJsonFences(text)) as GWTRequirement
-  } catch (e) {
-    console.error('baAgentGWT raw response:', text)
-    throw new Error('baAgentGWT: failed to parse response')
-  }
+  return safeParseJson<GWTRequirement>(text)
 }

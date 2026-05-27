@@ -1,5 +1,4 @@
-import { callAgent } from "./callAgent"
-import { stripJsonFences } from '@/lib/parseJson'
+import { callAgent, safeParseJson } from "./callAgent"
 import { buildAgentContext } from '@/lib/buildAgentContext'
 import type { GWTRequirement, ClassicRequirement } from "@/types"
 
@@ -25,10 +24,5 @@ export async function baAgentRevise(
   const contextBlock = buildAgentContext()
   const SYSTEM = contextBlock ? `${contextBlock}\n\n---\n\n${BASE_SYSTEM}` : BASE_SYSTEM
   const text = await callAgent(SYSTEM, userMessage, 'bobBA')
-  try {
-    return JSON.parse(stripJsonFences(text)) as GWTRequirement | ClassicRequirement
-  } catch (e) {
-    console.error('baAgentRevise raw response:', text)
-    throw new Error('baAgentRevise: failed to parse response')
-  }
+  return safeParseJson<GWTRequirement | ClassicRequirement>(text)
 }

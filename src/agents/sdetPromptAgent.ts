@@ -16,5 +16,5 @@ export async function sdetPromptAgent(
     testCases.length > 0 ? `Test cases:\n${JSON.stringify(testCases, null, 2)}` : '',
     sdetVerdict ? `SDET verdict:\n${JSON.stringify(sdetVerdict, null, 2)}` : '',
   ].filter(Boolean).join('\n\n')
-  return callAgent(SYSTEM, `Generate test automation prompt:\n\n${payload}`, undefined, 1500)
+  return callAgent(SYSTEM, `Generate test automation prompt:\n\n${payload}`, undefined)
 }

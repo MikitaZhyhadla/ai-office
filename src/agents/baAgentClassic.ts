@@ -1,5 +1,4 @@
-import { callAgent } from "./callAgent"
-import { stripJsonFences } from '@/lib/parseJson'
+import { callAgent, safeParseJson } from "./callAgent"
 import { buildAgentContext } from '@/lib/buildAgentContext'
 import type { ClassicRequirement } from "@/types"
 
@@ -23,10 +22,5 @@ export async function baAgentClassic(rawRequirement: string): Promise<ClassicReq
   const contextBlock = buildAgentContext()
   const SYSTEM = contextBlock ? `${contextBlock}\n\n---\n\n${BASE_SYSTEM}` : BASE_SYSTEM
   const text = await callAgent(SYSTEM, `Convert this requirement:\n\n${rawRequirement}`, 'aliceBA')
-  try {
-    return JSON.parse(stripJsonFences(text)) as ClassicRequirement
-  } catch (e) {
-    console.error('baAgentClassic raw response:', text)
-    throw new Error('baAgentClassic: failed to parse response')
-  }
+  return safeParseJson<ClassicRequirement>(text)
 }
