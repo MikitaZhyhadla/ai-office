@@ -166,6 +166,21 @@ export function CloseSprintAndRetroButton({ disabled }: Props) {
         onExport={handleExportTxt}
         onStartNextSprint={() => { setFlowState('idle'); setRetroReport(null) }}
       />
+
+      {retroLoading && (
+        <div style={{
+          position: 'fixed', bottom: '24px', right: '24px',
+          background: '#111120', border: '1px solid #854f0b',
+          borderRadius: '8px', padding: '14px 18px',
+          color: '#ef9f27', fontFamily: 'monospace', fontSize: '13px',
+          zIndex: 1100, display: 'flex', alignItems: 'center', gap: '10px',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
+        }}>
+          <span style={{ animation: 'spin 1s linear infinite', display: 'inline-block' }}>⟳</span>
+          Alice BA is generating sprint retrospective...
+          <style>{`@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }`}</style>
+        </div>
+      )}
     </>
   )
 }

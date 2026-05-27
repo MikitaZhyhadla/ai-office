@@ -1,5 +1,5 @@
 'use client'
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { useSettingsStore, DodItem } from '@/store/useSettingsStore'
 import { Topbar } from '@/components/shared/Topbar'
 import { BUILD_INFO } from '@/generated/buildInfo'
@@ -973,15 +973,42 @@ function AboutSection() {
 
 // ─── Main Page ───────────────────────────────────────────────────────────────
 export default function SettingsPage() {
-  const [active, setActive] = useState('project')
+  const [activeSection, setActiveSection] = useState('project')
   const contentRef = useRef<HTMLDivElement>(null)
 
-  function scrollTo(id: string) {
-    setActive(id)
+  useEffect(() => {
+    const sectionIds = ['project', 'model', 'product-context', 'domain-area', 'github', 'webhooks', 'dod', 'about']
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter(e => e.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)
+        if (visible.length > 0) {
+          setActiveSection(visible[0].target.id)
+        }
+      },
+      {
+        root: contentRef.current,
+        rootMargin: '-10% 0px -60% 0px',
+        threshold: 0,
+      }
+    )
+
+    sectionIds.forEach(id => {
+      const el = document.getElementById(id)
+      if (el) observer.observe(el)
+    })
+
+    return () => observer.disconnect()
+  }, [])
+
+  function scrollToSection(id: string) {
     const el = document.getElementById(id)
     if (el && contentRef.current) {
       contentRef.current.scrollTo({ top: el.offsetTop - 24, behavior: 'smooth' })
     }
+    setActiveSection(id)
   }
 
   return (
@@ -1002,14 +1029,14 @@ export default function SettingsPage() {
             {section.items.map(item => (
               <button
                 key={item.id}
-                onClick={() => scrollTo(item.id)}
+                onClick={() => scrollToSection(item.id)}
                 style={{
                   display: 'block', width: '100%', textAlign: 'left',
                   fontSize: 13, padding: '7px 20px', border: 'none', cursor: 'pointer',
-                  background: active === item.id ? '#f0eff7' : 'none',
-                  color:      active === item.id ? '#534AB7' : '#555',
-                  fontWeight: active === item.id ? 600 : 400,
-                  borderLeft: active === item.id ? '3px solid #534AB7' : '3px solid transparent',
+                  background: activeSection === item.id ? '#f0eff7' : 'none',
+                  color:      activeSection === item.id ? '#534AB7' : '#555',
+                  fontWeight: activeSection === item.id ? 600 : 400,
+                  borderLeft: activeSection === item.id ? '3px solid #534AB7' : '3px solid transparent',
                 }}
               >
                 {item.label}

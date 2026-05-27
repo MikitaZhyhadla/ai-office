@@ -150,7 +150,7 @@ export default function KanbanPage() {
 
         <SprintControls />
 
-        <CollapsiblePanel title="📉 Sprint Burndown" defaultOpen={true}>
+        <CollapsiblePanel title="📉 Sprint Burndown" defaultOpen={false}>
           <BurndownChart />
         </CollapsiblePanel>
 

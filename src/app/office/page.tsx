@@ -11,11 +11,11 @@ import { useAppStore } from '@/store/useAppStore'
 type SidebarTab = 'agents' | 'feed' | 'stats'
 
 const DESK_POSITIONS: Record<string, number> = {
-  alice: 22,
-  bob:   115,
-  qa1:   208,
-  dev1:  301,
-  sdet1: 394,
+  alice: 20,
+  bob:   180,
+  qa1:   340,
+  dev1:  500,
+  sdet1: 660,
 }
 
 function AgentDesk({ agent }: { agent: ReturnType<typeof useAppStore.getState>['agents'][0] }) {
@@ -65,11 +65,11 @@ function AgentDesk({ agent }: { agent: ReturnType<typeof useAppStore.getState>['
   }
 
   return (
-    <div style={{ position: 'absolute', width: '72px', left, top: '120px' }}>
+    <div style={{ position: 'absolute', width: '140px', left, top: '120px' }}>
       {isSdet && (
         <div style={{
-          position: 'absolute', top: '-18px', left: 0,
-          fontSize: '6px', padding: '1px 4px',
+          position: 'absolute', top: '-22px', left: 0,
+          fontSize: '11px', padding: '1px 6px',
           background: '#0a0f1a', border: '1px solid #1a3560',
           color: '#185fa5', letterSpacing: '1px', borderRadius: '1px',
         }}>
@@ -77,7 +77,7 @@ function AgentDesk({ agent }: { agent: ReturnType<typeof useAppStore.getState>['
         </div>
       )}
 
-      <div style={{ position: 'absolute', top: '-48px', left: '50%', transform: 'translateX(-50%)', width: '40px', display: 'flex', justifyContent: 'center' }}>
+      <div style={{ position: 'absolute', top: '-100px', left: '50%', transform: 'translateX(-50%)', width: '80px', display: 'flex', justifyContent: 'center' }}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative', opacity: isSdet ? 0.5 : 1 }}>
           <DocOrbit
             role={agent.role}
@@ -86,31 +86,31 @@ function AgentDesk({ agent }: { agent: ReturnType<typeof useAppStore.getState>['
           />
 
           <div style={{
-            width: '12px', height: '10px', borderRadius: '1px',
+            width: '30px', height: '25px', borderRadius: '1px',
             background: HEAD_COLORS[agent.role],
             animation: agent.status === 'thinking' ? 'po-headbob 1.2s ease-in-out infinite' : undefined,
           }} />
           <div style={{
-            width: '14px', height: '11px', borderRadius: '1px 1px 0 0',
+            width: '35px', height: '28px', borderRadius: '1px 1px 0 0',
             background: BODY_COLORS[agent.role],
             animation: agent.status === 'typing' ? 'po-type 0.25s ease-in-out infinite alternate' : undefined,
           }} />
-          <div style={{ display: 'flex', gap: '1px' }}>
-            <div style={{ width: '6px', height: '7px', background: '#1e1c3a', borderRadius: '0 0 1px 1px' }} />
-            <div style={{ width: '6px', height: '7px', background: '#1e1c3a', borderRadius: '0 0 1px 1px' }} />
+          <div style={{ display: 'flex', gap: '2px' }}>
+            <div style={{ width: '15px', height: '18px', background: '#1e1c3a', borderRadius: '0 0 2px 2px' }} />
+            <div style={{ width: '15px', height: '18px', background: '#1e1c3a', borderRadius: '0 0 2px 2px' }} />
           </div>
 
           {agent.currentTask && !isSdet && (
             <div style={{
               position: 'absolute',
-              bottom: '-20px',
+              bottom: '-28px',
               left: '50%',
               transform: 'translateX(-50%)',
               background: bubble.bg,
               border: `1px solid ${bubble.border}`,
               borderRadius: '4px',
-              padding: '3px 8px',
-              fontSize: '7px',
+              padding: '4px 10px',
+              fontSize: '13px',
               color: bubble.color,
               whiteSpace: 'nowrap',
               zIndex: 10,
@@ -123,18 +123,18 @@ function AgentDesk({ agent }: { agent: ReturnType<typeof useAppStore.getState>['
       </div>
 
       <div style={{
-        width: '44px', height: '28px',
+        width: '88px', height: '56px',
         background: '#0c0b1a',
         border: `1.5px solid ${isActive && !isSdet ? monColor : '#2a2848'}`,
         borderRadius: '1px',
-        position: 'absolute', top: 0, left: '14px',
-        boxShadow: isActive && !isSdet ? `0 0 5px ${monColor}44` : 'none',
+        position: 'absolute', top: 0, left: '26px',
+        boxShadow: isActive && !isSdet ? `0 0 8px ${monColor}44` : 'none',
         overflow: 'hidden',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         opacity: isSdet ? 0.4 : 1,
       }}>
         <pre style={{
-          fontSize: '5px', lineHeight: '1.4', padding: '2px', margin: 0,
+          fontSize: '10px', lineHeight: '1.4', padding: '3px', margin: 0,
           color: isActive && !isSdet ? monColor : '#1a1830',
           fontFamily: 'monospace',
         }}>
@@ -143,11 +143,11 @@ function AgentDesk({ agent }: { agent: ReturnType<typeof useAppStore.getState>['
       </div>
 
       <div style={{
-        width: '72px', height: '26px',
+        width: '140px', height: '52px',
         background: '#161428',
         border: '1px solid #252240',
         borderRadius: '2px',
-        marginTop: '34px',
+        marginTop: '62px',
         opacity: isSdet ? 0.4 : 1,
         borderStyle: isSdet ? 'dashed' : 'solid',
       }} />
@@ -158,7 +158,6 @@ function AgentDesk({ agent }: { agent: ReturnType<typeof useAppStore.getState>['
 export default function PixelOfficePage() {
   const agents = useAppStore(s => s.agents)
   const [tab, setTab] = useState<SidebarTab>('agents')
-  const [isFullscreen, setIsFullscreen] = useState(false)
 
   const totalTokens = agents.reduce((s, a) => s + (a.sessionTokens || 0), 0)
   const activeCount = agents.filter(a => a.status !== 'idle').length
@@ -207,20 +206,10 @@ export default function PixelOfficePage() {
                 {label} <b style={{ color: '#9087e0' }}>{val}</b>
               </span>
             ))}
-            <button
-              onClick={() => setIsFullscreen(f => !f)}
-              style={{
-                background: '#1a1830', border: '1px solid #2d2a50', color: '#7c6ef0',
-                padding: '2px 8px', fontSize: '9px', cursor: 'pointer',
-                fontFamily: 'monospace', letterSpacing: '1px', borderRadius: '2px',
-              }}
-            >
-              {isFullscreen ? '✕ EXIT' : '⛶ FULLSCREEN'}
-            </button>
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 260px', flex: 1 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', flex: 1 }}>
           <div style={{
             position: 'relative', background: '#09090f',
             borderRight: '1px solid #1e1c3a',
@@ -231,7 +220,7 @@ export default function PixelOfficePage() {
               backgroundImage: 'linear-gradient(rgba(83,74,183,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(83,74,183,0.04) 1px,transparent 1px)',
               backgroundSize: '20px 20px',
             }} />
-            <div style={{ position: 'absolute', top: '6px', left: '10px', fontSize: '8px', color: '#2a2848', letterSpacing: '3px' }}>
+            <div style={{ position: 'absolute', top: '6px', left: '10px', fontSize: '14px', color: '#2a2848', letterSpacing: '3px' }}>
               PIXEL OFFICE · FLOOR 1
             </div>
 
@@ -241,15 +230,15 @@ export default function PixelOfficePage() {
 
             <div style={{
               position: 'absolute', bottom: '8px', left: '8px', right: '8px',
-              background: '#0d0c18', border: '1px solid #1e1c3a', borderRadius: '3px', padding: '6px',
+              background: '#0d0c18', border: '1px solid #1e1c3a', borderRadius: '3px', padding: '12px',
             }}>
-              <div style={{ fontSize: '7px', color: '#2a2848', letterSpacing: '2px', marginBottom: '4px' }}>KANBAN WALL</div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '3px' }}>
+              <div style={{ fontSize: '13px', color: '#2a2848', letterSpacing: '2px', marginBottom: '6px' }}>KANBAN WALL</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '4px' }}>
                 {kanbanSummary.map(({ label, color, tickets }) => (
-                  <div key={label} style={{ background: '#0a0918', borderRadius: '2px', padding: '3px' }}>
-                    <div style={{ fontSize: '6px', textAlign: 'center', marginBottom: '3px', letterSpacing: '1px', color }}>{label}</div>
+                  <div key={label} style={{ background: '#0a0918', borderRadius: '2px', padding: '6px' }}>
+                    <div style={{ fontSize: '11px', textAlign: 'center', marginBottom: '4px', letterSpacing: '1px', color }}>{label}</div>
                     {Array.from({ length: Math.min(tickets, 5) }).map((_, i) => (
-                      <div key={i} style={{ height: '4px', borderRadius: '1px', marginBottom: '2px', background: color, opacity: 0.8 }} />
+                      <div key={i} style={{ height: '8px', borderRadius: '1px', marginBottom: '3px', background: color, opacity: 0.8 }} />
                     ))}
                   </div>
                 ))}
@@ -305,7 +294,7 @@ export default function PixelOfficePage() {
                 <div style={{ width: '5px', height: '5px', background: '#0f6e56', borderRadius: '50%', animation: 'po-dotpulse 1.5s infinite' }} />
                 live
               </div>
-              <div style={{ color: '#2a2848' }}>v5.5</div>
+              <div style={{ color: '#2a2848' }}>v5.5.1</div>
             </div>
           </div>
         </div>
