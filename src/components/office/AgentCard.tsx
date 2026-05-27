@@ -90,14 +90,14 @@ export function AgentCard({ agent, isComingSoon = false, onClick }: AgentCardPro
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
           <div style={{
-            width: '5px', height: '5px', borderRadius: '50%',
+            width: '8px', height: '8px', borderRadius: '50%',
             background: dotColor,
             animation: isActive ? 'po-pulse 0.9s infinite' : undefined,
           }} />
-          <span style={{ fontSize: '11px', color: '#c8c4f0', fontFamily: 'monospace' }}>{agent.name}</span>
+          <span style={{ fontSize: '14px', color: '#c8c4f0', fontFamily: 'monospace' }}>{agent.name}</span>
         </div>
         <span style={{
-          fontSize: '8px', padding: '1px 5px', borderRadius: '2px', letterSpacing: '1px',
+          fontSize: '11px', padding: '1px 5px', borderRadius: '2px', letterSpacing: '1px',
           background: rc.badge_bg, color: rc.badge_text,
           border: `1px solid ${rc.border}`, fontFamily: 'monospace',
         }}>
@@ -115,9 +115,9 @@ export function AgentCard({ agent, isComingSoon = false, onClick }: AgentCardPro
               ['TASK', agent.currentTask || '—', false],
             ] as [string, string, boolean][]).map(([label, value, highlight]) => (
               <div key={label}>
-                <div style={{ fontSize: '7px', color: '#2a2848', letterSpacing: '1px', fontFamily: 'monospace' }}>{label}</div>
+                <div style={{ fontSize: '11px', color: '#2a2848', letterSpacing: '1px', fontFamily: 'monospace' }}>{label}</div>
                 <div style={{
-                  fontSize: '9px',
+                  fontSize: '13px',
                   color: highlight ? rc.active_text : '#666',
                   fontFamily: 'monospace',
                   overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
@@ -128,7 +128,7 @@ export function AgentCard({ agent, isComingSoon = false, onClick }: AgentCardPro
             ))}
           </div>
           <div style={{ marginTop: '3px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '7px', color: '#2a2848', marginBottom: '2px', fontFamily: 'monospace' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#2a2848', marginBottom: '2px', fontFamily: 'monospace' }}>
               <span>usage</span><span>{pct}%</span>
             </div>
             <div style={{ height: '2px', background: '#1a1830', borderRadius: '1px', overflow: 'hidden' }}>
@@ -140,16 +140,16 @@ export function AgentCard({ agent, isComingSoon = false, onClick }: AgentCardPro
         <>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3px 6px', marginBottom: '4px' }}>
             <div>
-              <div style={{ fontSize: '7px', color: '#2a2848', letterSpacing: '1px', fontFamily: 'monospace' }}>PHASE</div>
-              <div style={{ fontSize: '9px', color: '#185fa5', fontFamily: 'monospace' }}>5.0</div>
+              <div style={{ fontSize: '11px', color: '#2a2848', letterSpacing: '1px', fontFamily: 'monospace' }}>PHASE</div>
+              <div style={{ fontSize: '13px', color: '#185fa5', fontFamily: 'monospace' }}>5.0</div>
             </div>
             <div>
-              <div style={{ fontSize: '7px', color: '#2a2848', letterSpacing: '1px', fontFamily: 'monospace' }}>STATUS</div>
-              <div style={{ fontSize: '9px', color: '#1a3560', fontFamily: 'monospace' }}>coming soon</div>
+              <div style={{ fontSize: '11px', color: '#2a2848', letterSpacing: '1px', fontFamily: 'monospace' }}>STATUS</div>
+              <div style={{ fontSize: '13px', color: '#1a3560', fontFamily: 'monospace' }}>coming soon</div>
             </div>
           </div>
           <div style={{
-            fontSize: '7px', color: '#1a3560', padding: '3px 5px',
+            fontSize: '11px', color: '#1a3560', padding: '3px 5px',
             background: '#070e1a', border: '1px dashed #0c2040', borderRadius: '2px',
             fontFamily: 'monospace',
           }}>

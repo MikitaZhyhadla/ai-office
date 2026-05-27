@@ -11,7 +11,6 @@ import { TestCasePanel } from "./TestCasePanel"
 import { BugReportView } from "./BugReportView"
 import { TechNotesPanel } from "./TechNotesPanel"
 import { MoSCoWBadge } from "./MoSCoWBadge"
-import { GeneratedPromptPanel } from "./GeneratedPromptPanel"
 import type { GWTRequirement, ClassicRequirement, KanbanColumn, TicketHistoryEntry } from "@/types"
 
 interface TicketModalProps {
@@ -19,7 +18,7 @@ interface TicketModalProps {
   onClose: () => void
 }
 
-type Tab = "requirements" | "verdicts" | "testcases" | "technotes" | "history"
+type Tab = "requirements" | "verdicts" | "testcases" | "technotes" | "devPrompt" | "autotestsPrompt" | "history"
 
 const NEXT_STATUS: Record<KanbanColumn, KanbanColumn | null> = {
   todo: "inprog",
@@ -76,10 +75,9 @@ export function TicketModal({ ticketId, onClose }: TicketModalProps) {
   const [jiraError,  setJiraError]  = useState<string | null>(null)
   const [azureError, setAzureError] = useState<string | null>(null)
   const [dodModalOpen, setDodModalOpen] = useState(false)
-  const [isGeneratingSdet,      setIsGeneratingSdet]      = useState(false)
-  const [isGeneratingDevPrompt, setIsGeneratingDevPrompt] = useState(false)
-  const [isGeneratingTestPrompt,setIsGeneratingTestPrompt]= useState(false)
-  const [shownPrompt, setShownPrompt] = useState<{ type: 'dev' | 'test'; content: string } | null>(null)
+  const [isGeneratingSdet,        setIsGeneratingSdet]        = useState(false)
+  const [isGeneratingDevPrompt,   setIsGeneratingDevPrompt]   = useState(false)
+  const [isGeneratingAutotests,   setIsGeneratingAutotests]   = useState(false)
 
   const handleKey = useCallback((e: KeyboardEvent) => {
     if (e.key === "Escape") onClose()
@@ -224,6 +222,31 @@ export function TicketModal({ ticketId, onClose }: TicketModalProps) {
     navigator.clipboard.writeText(JSON.stringify(ticket, null, 2))
   }
 
+  const handleGenerateDevPrompt = async () => {
+    setIsGeneratingDevPrompt(true)
+    try {
+      const prompt = await devPromptAgent(JSON.stringify(ticket.data))
+      updateTicket(ticket.id, { devPrompt: prompt })
+    } finally { setIsGeneratingDevPrompt(false) }
+  }
+
+  const handleCopyDevPrompt = () => {
+    if (ticket.devPrompt) navigator.clipboard.writeText(ticket.devPrompt)
+  }
+
+  const handleGenerateAutotestsPrompt = async () => {
+    setIsGeneratingAutotests(true)
+    try {
+      const tcs = testCases[ticketId] ?? []
+      const prompt = await sdetPromptAgent(JSON.stringify(ticket.data), tcs, ticket.sdetVerdict)
+      updateTicket(ticket.id, { autotestsPrompt: prompt })
+    } finally { setIsGeneratingAutotests(false) }
+  }
+
+  const handleCopyAutotestsPrompt = () => {
+    if (ticket.autotestsPrompt) navigator.clipboard.writeText(ticket.autotestsPrompt)
+  }
+
   const sortedHistory = [...(ticket.history ?? [])].sort(
     (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
   )
@@ -307,14 +330,14 @@ export function TicketModal({ ticketId, onClose }: TicketModalProps) {
         </div>
 
         {/* ── Tabs ── */}
-        <div style={{ display:"flex", padding:"0 22px", borderBottom:"1px solid #e8e8f0", flexShrink:0 }}>
-          {(["requirements","verdicts","testcases","technotes","history"] as Tab[]).map(tab => (
+        <div style={{ display:"flex", padding:"0 22px", borderBottom:"1px solid #e8e8f0", flexShrink:0, overflowX:"auto" }}>
+          {(["requirements","verdicts","testcases","technotes","devPrompt","autotestsPrompt","history"] as Tab[]).map(tab => (
             <button key={tab} onClick={() => setActiveTab(tab)}
               style={{ background:"none", border:"none", cursor:"pointer", padding:"12px 14px",
                        fontSize:13, fontWeight:500, fontFamily:"inherit",
                        borderBottom: activeTab === tab ? "2px solid #534AB7" : "2px solid transparent",
                        color: activeTab === tab ? "#534AB7" : "#888",
-                       marginBottom:-1, display:"flex", alignItems:"center", gap:4 }}>
+                       marginBottom:-1, display:"flex", alignItems:"center", gap:4, whiteSpace:"nowrap" }}>
               {tab === "testcases" ? (
                 <>
                   <span>Test Cases</span>
@@ -337,6 +360,32 @@ export function TicketModal({ ticketId, onClose }: TicketModalProps) {
                       fontSize: 9, padding: '1px 5px',
                       borderRadius: 10, fontWeight: 600,
                       marginLeft: 3,
+                    }}>
+                      ✓
+                    </span>
+                  )}
+                </>
+              ) : tab === "devPrompt" ? (
+                <>
+                  <span>Dev Prompt</span>
+                  {ticket.devPrompt && (
+                    <span style={{
+                      background: '#dbeafe', color: '#1d4ed8',
+                      fontSize: 9, padding: '1px 5px',
+                      borderRadius: 10, fontWeight: 600, marginLeft: 3,
+                    }}>
+                      ✓
+                    </span>
+                  )}
+                </>
+              ) : tab === "autotestsPrompt" ? (
+                <>
+                  <span>Autotests Prompt</span>
+                  {ticket.autotestsPrompt && (
+                    <span style={{
+                      background: '#f3e8ff', color: '#7c3aed',
+                      fontSize: 9, padding: '1px 5px',
+                      borderRadius: 10, fontWeight: 600, marginLeft: 3,
                     }}>
                       ✓
                     </span>
@@ -609,6 +658,136 @@ export function TicketModal({ ticketId, onClose }: TicketModalProps) {
             />
           )}
 
+          {/* Dev Prompt tab */}
+          {activeTab === "devPrompt" && (
+            <div>
+              {!ticket.devPrompt ? (
+                <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-start", gap:12 }}>
+                  <p style={{ fontSize:13, color:"#555", margin:0, lineHeight:1.6 }}>
+                    Generate a ready-to-use implementation prompt for Claude Code or GitHub Copilot based on this ticket&apos;s requirements.
+                  </p>
+                  <button
+                    onClick={handleGenerateDevPrompt}
+                    disabled={isGeneratingDevPrompt}
+                    style={{
+                      background: isGeneratingDevPrompt ? "#dbeafe" : "#eff6ff",
+                      color: isGeneratingDevPrompt ? "#93c5fd" : "#1d4ed8",
+                      border: "1px solid #bfdbfe", borderRadius: 8,
+                      padding: "9px 18px", fontSize: 13, fontWeight: 500,
+                      cursor: isGeneratingDevPrompt ? "not-allowed" : "pointer",
+                      display: "flex", alignItems: "center", gap: 6, fontFamily: "inherit",
+                    }}
+                  >
+                    {isGeneratingDevPrompt
+                      ? <><span style={{ display:"inline-block", animation:"spin 1s linear infinite" }}>⟳</span> Generating...</>
+                      : "⚡ Generate Dev Prompt"}
+                  </button>
+                </div>
+              ) : (
+                <div>
+                  <div style={{ display:"flex", gap:8, marginBottom:14 }}>
+                    <button
+                      onClick={handleCopyDevPrompt}
+                      style={{
+                        background:"#eff6ff", color:"#1d4ed8", border:"1px solid #bfdbfe",
+                        borderRadius:7, padding:"7px 14px", fontSize:12, fontWeight:500,
+                        cursor:"pointer", fontFamily:"inherit",
+                      }}
+                    >⎘ Copy</button>
+                    <button
+                      onClick={handleGenerateDevPrompt}
+                      disabled={isGeneratingDevPrompt}
+                      style={{
+                        background: isGeneratingDevPrompt ? "#f9fafb" : "#fff",
+                        color: isGeneratingDevPrompt ? "#aaa" : "#555",
+                        border:"1.5px solid #ddd", borderRadius:7,
+                        padding:"7px 14px", fontSize:12, fontWeight:500,
+                        cursor: isGeneratingDevPrompt ? "not-allowed" : "pointer", fontFamily:"inherit",
+                      }}
+                    >
+                      {isGeneratingDevPrompt
+                        ? <><span style={{ display:"inline-block", animation:"spin 1s linear infinite" }}>⟳</span> Regenerating...</>
+                        : "↺ Regenerate"}
+                    </button>
+                  </div>
+                  <pre style={{
+                    whiteSpace:"pre-wrap", fontFamily:"monospace", fontSize:13,
+                    background:"#f8f8fc", border:"1px solid #e8e8f0", borderRadius:8,
+                    padding:"16px", lineHeight:1.6, color:"#333", margin:0, overflowX:"auto",
+                  }}>
+                    {ticket.devPrompt}
+                  </pre>
+                </div>
+              )}
+              <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+            </div>
+          )}
+
+          {/* Autotests Prompt tab */}
+          {activeTab === "autotestsPrompt" && (
+            <div>
+              {!ticket.autotestsPrompt ? (
+                <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-start", gap:12 }}>
+                  <p style={{ fontSize:13, color:"#555", margin:0, lineHeight:1.6 }}>
+                    Generate a ready-to-use test automation prompt for Playwright, Cypress, or Jest based on this ticket&apos;s requirements.
+                  </p>
+                  <button
+                    onClick={handleGenerateAutotestsPrompt}
+                    disabled={isGeneratingAutotests}
+                    style={{
+                      background: isGeneratingAutotests ? "#f3e8ff" : "#faf5ff",
+                      color: isGeneratingAutotests ? "#c4b5fd" : "#7c3aed",
+                      border: "1px solid #e9d5ff", borderRadius: 8,
+                      padding: "9px 18px", fontSize: 13, fontWeight: 500,
+                      cursor: isGeneratingAutotests ? "not-allowed" : "pointer",
+                      display: "flex", alignItems: "center", gap: 6, fontFamily: "inherit",
+                    }}
+                  >
+                    {isGeneratingAutotests
+                      ? <><span style={{ display:"inline-block", animation:"spin 1s linear infinite" }}>⟳</span> Generating...</>
+                      : "🧪 Generate Autotests Prompt"}
+                  </button>
+                </div>
+              ) : (
+                <div>
+                  <div style={{ display:"flex", gap:8, marginBottom:14 }}>
+                    <button
+                      onClick={handleCopyAutotestsPrompt}
+                      style={{
+                        background:"#faf5ff", color:"#7c3aed", border:"1px solid #e9d5ff",
+                        borderRadius:7, padding:"7px 14px", fontSize:12, fontWeight:500,
+                        cursor:"pointer", fontFamily:"inherit",
+                      }}
+                    >⎘ Copy</button>
+                    <button
+                      onClick={handleGenerateAutotestsPrompt}
+                      disabled={isGeneratingAutotests}
+                      style={{
+                        background: isGeneratingAutotests ? "#f9fafb" : "#fff",
+                        color: isGeneratingAutotests ? "#aaa" : "#555",
+                        border:"1.5px solid #ddd", borderRadius:7,
+                        padding:"7px 14px", fontSize:12, fontWeight:500,
+                        cursor: isGeneratingAutotests ? "not-allowed" : "pointer", fontFamily:"inherit",
+                      }}
+                    >
+                      {isGeneratingAutotests
+                        ? <><span style={{ display:"inline-block", animation:"spin 1s linear infinite" }}>⟳</span> Regenerating...</>
+                        : "↺ Regenerate"}
+                    </button>
+                  </div>
+                  <pre style={{
+                    whiteSpace:"pre-wrap", fontFamily:"monospace", fontSize:13,
+                    background:"#f8f8fc", border:"1px solid #e8e8f0", borderRadius:8,
+                    padding:"16px", lineHeight:1.6, color:"#333", margin:0, overflowX:"auto",
+                  }}>
+                    {ticket.autotestsPrompt}
+                  </pre>
+                </div>
+              )}
+              <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+            </div>
+          )}
+
           {/* History tab */}
           {activeTab === "history" && (
             <div>
@@ -693,18 +872,6 @@ export function TicketModal({ ticketId, onClose }: TicketModalProps) {
             </div>
           )}
 
-          {/* Generated prompt panel */}
-          {shownPrompt && (
-            <div style={{ padding:"0 22px 12px" }}>
-              <GeneratedPromptPanel
-                title={shownPrompt.type === 'dev' ? '⚡ Dev Implementation Prompt' : '🧪 Test Automation Prompt'}
-                content={shownPrompt.content}
-                accentColor={shownPrompt.type === 'dev' ? 'indigo' : 'purple'}
-                onClose={() => setShownPrompt(null)}
-              />
-            </div>
-          )}
-
           {/* Action row */}
           <div style={{ display:"flex", gap:8, padding:"14px 22px", flexWrap:"wrap" }}>
             {nextSt && !isResolved && (
@@ -715,67 +882,6 @@ export function TicketModal({ ticketId, onClose }: TicketModalProps) {
               </button>
             )}
 
-            {/* Dev prompt button */}
-            {ticket.ticketType !== 'bug' && (
-              <button
-                onClick={async () => {
-                  setIsGeneratingDevPrompt(true)
-                  try {
-                    const prompt = await devPromptAgent(JSON.stringify(ticket.data))
-                    updateTicket(ticket.id, { devPrompt: prompt })
-                    setShownPrompt({ type: 'dev', content: prompt })
-                  } finally { setIsGeneratingDevPrompt(false) }
-                }}
-                disabled={isGeneratingDevPrompt}
-                style={{
-                  background: isGeneratingDevPrompt ? "#dbeafe" : "#eff6ff",
-                  color: isGeneratingDevPrompt ? "#93c5fd" : "#1d4ed8",
-                  border: "1px solid #bfdbfe",
-                  borderRadius: 8, padding: "8px 14px", fontSize: 12,
-                  cursor: isGeneratingDevPrompt ? "not-allowed" : "pointer",
-                  display: "flex", alignItems: "center", gap: 5,
-                  fontFamily: "inherit", fontWeight: 500,
-                }}
-              >
-                {isGeneratingDevPrompt
-                  ? <><span style={{ display:"inline-block", animation:"spin 1s linear infinite" }}>⟳</span> Generating…</>
-                  : "⚡ Generate Dev Prompt"}
-              </button>
-            )}
-
-            {/* Test prompt button */}
-            {ticket.ticketType !== 'bug' && (() => {
-              const tcs = testCases[ticketId] ?? []
-              const disabled = isGeneratingTestPrompt || tcs.length === 0
-              return (
-                <button
-                  onClick={async () => {
-                    setIsGeneratingTestPrompt(true)
-                    try {
-                      const prompt = await sdetPromptAgent(JSON.stringify(ticket.data), tcs, ticket.sdetVerdict)
-                      updateTicket(ticket.id, { testPrompt: prompt })
-                      setShownPrompt({ type: 'test', content: prompt })
-                    } finally { setIsGeneratingTestPrompt(false) }
-                  }}
-                  disabled={disabled}
-                  title={tcs.length === 0 ? "Generate test cases first" : undefined}
-                  style={{
-                    background: disabled ? "#f5f3ff" : "#faf5ff",
-                    color: disabled ? "#c4b5fd" : "#7C3AED",
-                    border: "1px solid #e9d5ff",
-                    borderRadius: 8, padding: "8px 14px", fontSize: 12,
-                    cursor: disabled ? "not-allowed" : "pointer",
-                    display: "flex", alignItems: "center", gap: 5,
-                    fontFamily: "inherit", fontWeight: 500,
-                    opacity: tcs.length === 0 ? 0.6 : 1,
-                  }}
-                >
-                  {isGeneratingTestPrompt
-                    ? <><span style={{ display:"inline-block", animation:"spin 1s linear infinite" }}>⟳</span> Generating…</>
-                    : "🧪 Generate Test Prompt"}
-                </button>
-              )
-            })()}
             <button onClick={handleCopyJSON}
               style={{ background:"none", border:"1.5px solid #ddd", color:"#555", borderRadius:8,
                        padding:"8px 14px", fontSize:12, cursor:"pointer" }}>

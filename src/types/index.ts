@@ -127,9 +127,10 @@ export interface Ticket {
   inSprint?:            boolean
   resolvedInSprint?: string
   resolvedAt?:       string
-  sdetVerdict?:  SDETVerdict
-  devPrompt?:    string
-  testPrompt?:   string
+  sdetVerdict?:      SDETVerdict
+  devPrompt?:        string
+  testPrompt?:       string
+  autotestsPrompt?:  string
 }
 export interface Agent {
   id: string

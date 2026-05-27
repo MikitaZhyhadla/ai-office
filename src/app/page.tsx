@@ -543,9 +543,9 @@ export default function PipelinePage() {
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               <button
                 onClick={handleAnalyzeBug}
-                disabled={loading || bugText.trim().length < 20}
+                disabled={loading || bugText.trim().length < 1}
                 style={{
-                  background: loading || bugText.trim().length < 20 ? "#ccc" : "#534AB7",
+                  background: loading || bugText.trim().length < 1 ? "#ccc" : "#534AB7",
                   color: "#fff",
                   border: "none",
                   borderRadius: 8,
@@ -553,7 +553,7 @@ export default function PipelinePage() {
                   fontSize: 12,
                   fontWeight: 500,
                   fontFamily: "inherit",
-                  cursor: loading || bugText.trim().length < 20 ? "not-allowed" : "pointer",
+                  cursor: loading || bugText.trim().length < 1 ? "not-allowed" : "pointer",
                 }}
               >
                 {loading ? "Analyzing..." : "🐛 Analyze Bug with QA Agent"}
