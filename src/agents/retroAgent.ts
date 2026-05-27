@@ -76,7 +76,7 @@ export async function runRetroAgent(sprintData: SprintAgentInput): Promise<Retro
   const userPrompt = buildUserPrompt(sprintData)
   const contextBlock = buildAgentContext()
   const SYSTEM = contextBlock ? `${contextBlock}\n\n---\n\n${BASE_SYSTEM}` : BASE_SYSTEM
-  const raw = await callAgent(SYSTEM, userPrompt)
+  const raw = await callAgent(SYSTEM, userPrompt, 'devLead')
   try {
     return JSON.parse(stripJsonFences(raw)) as RetroReport
   } catch (e) {

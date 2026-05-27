@@ -3,6 +3,8 @@ import { useRef, useState } from 'react'
 import { useSettingsStore, DodItem } from '@/store/useSettingsStore'
 import { Topbar } from '@/components/shared/Topbar'
 import { BUILD_INFO } from '@/generated/buildInfo'
+import { AgentModelRow } from '@/components/settings/AgentModelRow'
+import { CostEstimator, computeCost } from '@/components/settings/CostEstimator'
 
 const MODELS = [
   { id: 'claude-haiku-4-5-20251001',   name: 'Claude Haiku 4.5',  desc: 'Fast & cheap · Default' },
@@ -144,45 +146,184 @@ function ProjectSection() {
 }
 
 // ─── AI Model Section ────────────────────────────────────────────────────────
+const MODEL_RADIO_OPTIONS = [
+  {
+    value: 'claude-haiku-4-5-20251001',
+    label: 'Claude Haiku 4.5',
+    badge: 'Fastest', badgeBg: '#EAF3DE', badgeColor: '#27500A',
+    desc: 'Most cost-efficient. Best for high-volume analysis.',
+    cost: 'Input $0.80 / Output $4.00 per 1M tokens',
+  },
+  {
+    value: 'claude-sonnet-4-20250514',
+    label: 'Claude Sonnet 4',
+    badge: 'Recommended', badgeBg: '#EEEDFE', badgeColor: '#534AB7',
+    desc: 'Balanced performance and intelligence. Recommended for complex requirements analysis.',
+    cost: 'Input $3.00 / Output $15.00 per 1M tokens',
+  },
+  {
+    value: 'claude-opus-4-20250514',
+    label: 'Claude Opus 4',
+    badge: 'Most capable', badgeBg: '#FAEEDA', badgeColor: '#854F0B',
+    desc: 'Highest intelligence for the most nuanced tasks.',
+    cost: 'Input $15.00 / Output $75.00 per 1M tokens',
+  },
+]
+
 function ModelSection() {
   const { model, updateModel, autoTranslate, setAutoTranslate } = useSettingsStore()
+  const overrideOn      = useSettingsStore(s => s.agentModelOverride)
+  const agentModels     = useSettingsStore(s => s.agentModels)
+  const setAgentModelOverride = useSettingsStore(s => s.setAgentModelOverride)
+  const setAgentModel   = useSettingsStore(s => s.setAgentModel)
+
+  function handleOverrideToggle(val: boolean) {
+    if (val) {
+      const keys: Array<keyof typeof agentModels> = ['aliceBA', 'bobBA', 'qaLead', 'devLead']
+      keys.forEach(k => setAgentModel(k, model || 'claude-haiku-4-5-20251001'))
+    }
+    setAgentModelOverride(val)
+  }
 
   return (
     <div id="model" style={card}>
       <SectionTitle>AI Model</SectionTitle>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {MODELS.map(m => {
-          const active = model === m.id
-          return (
-            <div
-              key={m.id}
-              onClick={() => updateModel(m.id)}
-              style={{
-                border: `2px solid ${active ? '#534AB7' : '#e8e8f0'}`,
-                borderRadius: 8,
-                padding: '14px 18px',
-                cursor: 'pointer',
-                background: active ? '#f7f6ff' : '#fff',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 14,
-                transition: 'border-color 0.15s',
-              }}
-            >
-              <div style={{
-                width: 16, height: 16, borderRadius: '50%',
-                border: `2px solid ${active ? '#534AB7' : '#ccc'}`,
-                background: active ? '#534AB7' : '#fff',
-                flexShrink: 0,
-              }} />
-              <div>
-                <div style={{ fontWeight: 600, fontSize: 13, color: '#1a1a2e' }}>{m.name}</div>
-                <div style={{ fontSize: 11, color: '#888', marginTop: 2 }}>{m.desc}</div>
+      <p style={{ fontSize: 12, color: '#888', margin: '0 0 16px' }}>
+        Choose the default Claude model, or override individually per agent.
+      </p>
+
+      {/* Default model heading */}
+      <h3 style={{ fontSize: 13, fontWeight: 600, margin: '0 0 10px', color: overrideOn ? '#999AAA' : '#1A1A2E' }}>
+        {overrideOn ? 'Default model (disabled while override is on)' : 'Default model for all agents'}
+      </h3>
+
+      {/* Radio options */}
+      {MODEL_RADIO_OPTIONS.map(opt => {
+        const isSelected = model === opt.value
+        return (
+          <div
+            key={opt.value}
+            onClick={() => !overrideOn && updateModel(opt.value)}
+            style={{
+              display: 'flex', alignItems: 'flex-start', gap: '10px',
+              padding: '11px 13px',
+              border: isSelected && !overrideOn ? '2px solid #534AB7' : '1px solid #EEEDF8',
+              borderRadius: '8px', marginBottom: '7px',
+              background: isSelected && !overrideOn ? '#EEEDFE' : '#FFFFFF',
+              cursor: overrideOn ? 'not-allowed' : 'pointer',
+              opacity: overrideOn ? 0.4 : 1,
+              transition: 'all 0.15s',
+            }}
+          >
+            <div style={{
+              width: '14px', height: '14px', borderRadius: '50%', flexShrink: 0,
+              border: isSelected && !overrideOn ? '5px solid #534AB7' : '1.5px solid #CCC',
+              marginTop: '2px',
+            }} />
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '7px', flexWrap: 'wrap', marginBottom: '2px' }}>
+                <span style={{ fontSize: '13px', fontWeight: 600 }}>{opt.label}</span>
+                <span style={{
+                  fontSize: '10px', padding: '1px 7px', borderRadius: '10px',
+                  background: opt.badgeBg, color: opt.badgeColor, fontWeight: 600,
+                }}>
+                  {opt.badge}
+                </span>
               </div>
+              <div style={{ fontSize: '12px', color: '#555566', marginBottom: '2px' }}>{opt.desc}</div>
+              <div style={{ fontSize: '11px', color: '#BBBBBB' }}>{opt.cost}</div>
             </div>
-          )
-        })}
+          </div>
+        )
+      })}
+
+      {/* Divider */}
+      <div style={{ height: '1px', background: '#EEEDF8', margin: '14px 0' }} />
+
+      {/* Override toggle */}
+      <div
+        onClick={() => handleOverrideToggle(!overrideOn)}
+        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', userSelect: 'none' }}
+      >
+        <div>
+          <div style={{ fontSize: '13px', fontWeight: 600, color: '#1A1A2E' }}>Override per agent</div>
+          <div style={{ fontSize: '12px', color: '#999AAA', marginTop: '1px' }}>Set a different model for specific agents</div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{
+            width: '34px', height: '18px', borderRadius: '9px',
+            background: overrideOn ? '#534AB7' : '#CCCCCC',
+            position: 'relative', transition: 'background 0.2s',
+          }}>
+            <div style={{
+              position: 'absolute', top: '2px',
+              left: overrideOn ? '18px' : '2px',
+              width: '14px', height: '14px', borderRadius: '50%',
+              background: 'white', boxShadow: '0 1px 3px rgba(0,0,0,.2)',
+              transition: 'left 0.2s',
+            }} />
+          </div>
+          <span style={{
+            fontSize: '11px', color: '#999',
+            transform: overrideOn ? 'rotate(180deg)' : 'none',
+            display: 'inline-block', transition: 'transform 0.2s',
+          }}>▾</span>
+        </div>
       </div>
+
+      {/* Agent override table */}
+      {overrideOn && (
+        <div style={{ marginTop: '12px' }}>
+          <div style={{
+            display: 'grid', gridTemplateColumns: '28px 100px 46px 1fr 80px',
+            gap: '8px', paddingBottom: '6px', borderBottom: '1px solid #EEEDF8', marginBottom: '2px',
+          }}>
+            {['', 'AGENT', 'ROLE', 'MODEL', 'EST. COST'].map(h => (
+              <span key={h} style={{ fontSize: '10px', color: '#999AAA', letterSpacing: '0.05em', textTransform: 'uppercase' }}>{h}</span>
+            ))}
+          </div>
+
+          {([
+            { key: 'aliceBA' as const,  dot: '#534AB7', name: 'Alice BA',  role: 'BA',   roleBg: '#EEEDFE', roleColor: '#534AB7' },
+            { key: 'bobBA' as const,    dot: '#7F77DD', name: 'Bob BA',    role: 'BA',   roleBg: '#EEEDFE', roleColor: '#534AB7' },
+            { key: 'qaLead' as const,   dot: '#0F6E56', name: 'QA Lead',   role: 'QA',   roleBg: '#E1F5EE', roleColor: '#0F6E56' },
+            { key: 'devLead' as const,  dot: '#854F0B', name: 'Dev Lead',  role: 'DEV',  roleBg: '#FAEEDA', roleColor: '#854F0B' },
+          ] as const).map(agent => (
+            <AgentModelRow
+              key={agent.key}
+              dotColor={agent.dot}
+              name={agent.name}
+              role={agent.role}
+              roleBg={agent.roleBg}
+              roleColor={agent.roleColor}
+              modelValue={agentModels[agent.key]}
+              onModelChange={(val) => setAgentModel(agent.key, val)}
+              estimatedCost={`~$${computeCost(agentModels[agent.key]).toFixed(4)}`}
+            />
+          ))}
+
+          <AgentModelRow
+            dotColor="#185FA5"
+            name="SDET Agent"
+            role="SDET"
+            roleBg="#E6F1FB"
+            roleColor="#185FA5"
+            modelValue="claude-haiku-4-5-20251001"
+            onModelChange={() => {}}
+            estimatedCost="phase 5"
+            isPhase5
+          />
+
+          <CostEstimator
+            rows={[
+              { name: 'Alice BA',  model: agentModels.aliceBA,  cost: computeCost(agentModels.aliceBA) },
+              { name: 'Bob BA',    model: agentModels.bobBA,    cost: computeCost(agentModels.bobBA) },
+              { name: 'QA Lead',   model: agentModels.qaLead,   cost: computeCost(agentModels.qaLead) },
+              { name: 'Dev Lead',  model: agentModels.devLead,  cost: computeCost(agentModels.devLead) },
+            ]}
+          />
+        </div>
+      )}
 
       {/* Auto-Translation sub-section */}
       <div style={{ marginTop: 24, borderTop: '1px solid #f0f0f0', paddingTop: 20 }}>

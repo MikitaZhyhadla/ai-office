@@ -21,7 +21,7 @@ Return ONLY valid JSON:
 export async function qaAgent(requirement: string): Promise<QAVerdict> {
   const contextBlock = buildAgentContext()
   const SYSTEM = contextBlock ? `${contextBlock}\n\n---\n\n${BASE_SYSTEM}` : BASE_SYSTEM
-  const text = await callAgent(SYSTEM, `Analyze testability:\n\n${requirement}`)
+  const text = await callAgent(SYSTEM, `Analyze testability:\n\n${requirement}`, 'qaLead')
   try {
     return JSON.parse(stripJsonFences(text)) as QAVerdict
   } catch (e) {

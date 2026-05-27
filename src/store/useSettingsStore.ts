@@ -32,7 +32,7 @@ interface GithubConfig {
   testRepoPAT: string
 }
 
-interface SettingsState {
+export interface SettingsState {
   model: string
   projectName: string
   projectDescription: string
@@ -53,6 +53,15 @@ interface SettingsState {
   customDomain: string
   // F-03 GitHub Integration
   github: GithubConfig
+  // Phase 5.5-B: Per-agent model selection
+  agentModelOverride: boolean
+  agentModels: {
+    aliceBA: string
+    bobBA: string
+    qaLead: string
+    devLead: string
+    sdetAgent: string
+  }
   updateProject: (data: { projectName?: string; projectDescription?: string; teamSize?: number }) => void
   setProjectName: (name: string) => void
   updateModel: (model: string) => void
@@ -69,6 +78,8 @@ interface SettingsState {
   setSelectedDomain: (v: string) => void
   setCustomDomain: (v: string) => void
   updateGithub: (data: Partial<GithubConfig>) => void
+  setAgentModelOverride: (val: boolean) => void
+  setAgentModel: (agentKey: keyof SettingsState['agentModels'], model: string) => void
 }
 
 const DEFAULT_DOD_ITEMS: DodItem[] = [
@@ -117,6 +128,14 @@ export const useSettingsStore = create<SettingsState>()(
         testRepoUrl: '',
         testRepoPAT: '',
       },
+      agentModelOverride: false,
+      agentModels: {
+        aliceBA: 'claude-haiku-4-5-20251001',
+        bobBA: 'claude-haiku-4-5-20251001',
+        qaLead: 'claude-haiku-4-5-20251001',
+        devLead: 'claude-haiku-4-5-20251001',
+        sdetAgent: 'claude-haiku-4-5-20251001',
+      },
 
       updateProject: (data) => set((s) => ({ ...s, ...data })),
       setProjectName: (name) => set({ projectName: name }),
@@ -134,6 +153,8 @@ export const useSettingsStore = create<SettingsState>()(
       setSelectedDomain: (v) => set({ selectedDomain: v }),
       setCustomDomain: (v) => set({ customDomain: v }),
       updateGithub: (data) => set((s) => ({ github: { ...s.github, ...data } })),
+      setAgentModelOverride: (val) => set({ agentModelOverride: val }),
+      setAgentModel: (agentKey, model) => set((s) => ({ agentModels: { ...s.agentModels, [agentKey]: model } })),
     }),
     { name: 'ai-office-settings' }
   )

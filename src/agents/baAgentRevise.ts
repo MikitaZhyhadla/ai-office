@@ -24,7 +24,7 @@ export async function baAgentRevise(
 
   const contextBlock = buildAgentContext()
   const SYSTEM = contextBlock ? `${contextBlock}\n\n---\n\n${BASE_SYSTEM}` : BASE_SYSTEM
-  const text = await callAgent(SYSTEM, userMessage)
+  const text = await callAgent(SYSTEM, userMessage, 'bobBA')
   try {
     return JSON.parse(stripJsonFences(text)) as GWTRequirement | ClassicRequirement
   } catch (e) {

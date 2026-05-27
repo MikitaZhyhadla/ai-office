@@ -22,7 +22,7 @@ Return ONLY valid JSON, no markdown:
 export async function baAgentClassic(rawRequirement: string): Promise<ClassicRequirement> {
   const contextBlock = buildAgentContext()
   const SYSTEM = contextBlock ? `${contextBlock}\n\n---\n\n${BASE_SYSTEM}` : BASE_SYSTEM
-  const text = await callAgent(SYSTEM, `Convert this requirement:\n\n${rawRequirement}`)
+  const text = await callAgent(SYSTEM, `Convert this requirement:\n\n${rawRequirement}`, 'aliceBA')
   try {
     return JSON.parse(stripJsonFences(text)) as ClassicRequirement
   } catch (e) {
