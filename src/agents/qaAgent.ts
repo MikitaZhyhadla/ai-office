@@ -1,5 +1,4 @@
-import { callAgent } from "./callAgent"
-import { stripJsonFences } from '@/lib/parseJson'
+import { callAgent, safeParseJson } from "./callAgent"
 import { buildAgentContext } from '@/lib/buildAgentContext'
 
 export interface QAVerdict {
@@ -22,10 +21,5 @@ export async function qaAgent(requirement: string): Promise<QAVerdict> {
   const contextBlock = buildAgentContext()
   const SYSTEM = contextBlock ? `${contextBlock}\n\n---\n\n${BASE_SYSTEM}` : BASE_SYSTEM
   const text = await callAgent(SYSTEM, `Analyze testability:\n\n${requirement}`, 'qaLead')
-  try {
-    return JSON.parse(stripJsonFences(text)) as QAVerdict
-  } catch (e) {
-    console.error('qaAgent raw response:', text)
-    throw new Error('qaAgent: failed to parse response')
-  }
+  return safeParseJson<QAVerdict>(text)
 }

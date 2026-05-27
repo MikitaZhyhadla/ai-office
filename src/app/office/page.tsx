@@ -20,7 +20,6 @@ const DESK_POSITIONS: Record<string, number> = {
 
 function AgentDesk({ agent }: { agent: ReturnType<typeof useAppStore.getState>['agents'][0] }) {
   const isActive = agent.status !== 'idle'
-  const isSdet = agent.role === 'sdet'
   const left = DESK_POSITIONS[agent.id] ?? 22
 
   const MONITOR_COLORS: Record<string, string> = {
@@ -66,23 +65,12 @@ function AgentDesk({ agent }: { agent: ReturnType<typeof useAppStore.getState>['
 
   return (
     <div style={{ position: 'absolute', width: '140px', left, top: '120px' }}>
-      {isSdet && (
-        <div style={{
-          position: 'absolute', top: '-22px', left: 0,
-          fontSize: '11px', padding: '1px 6px',
-          background: '#0a0f1a', border: '1px solid #1a3560',
-          color: '#185fa5', letterSpacing: '1px', borderRadius: '1px',
-        }}>
-          PHASE 5
-        </div>
-      )}
-
       <div style={{ position: 'absolute', top: '-100px', left: '50%', transform: 'translateX(-50%)', width: '80px', display: 'flex', justifyContent: 'center' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative', opacity: isSdet ? 0.5 : 1 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative' }}>
           <DocOrbit
             role={agent.role}
-            speed={isSdet ? 'slow' : orbitSpeed}
-            docCount={isActive && !isSdet ? 3 : 2}
+            speed={orbitSpeed}
+            docCount={isActive ? 3 : 2}
           />
 
           <div style={{
@@ -100,7 +88,7 @@ function AgentDesk({ agent }: { agent: ReturnType<typeof useAppStore.getState>['
             <div style={{ width: '15px', height: '18px', background: '#1e1c3a', borderRadius: '0 0 2px 2px' }} />
           </div>
 
-          {agent.currentTask && !isSdet && (
+          {agent.currentTask && (
             <div style={{
               position: 'absolute',
               bottom: '-28px',
@@ -125,17 +113,16 @@ function AgentDesk({ agent }: { agent: ReturnType<typeof useAppStore.getState>['
       <div style={{
         width: '88px', height: '56px',
         background: '#0c0b1a',
-        border: `1.5px solid ${isActive && !isSdet ? monColor : '#2a2848'}`,
+        border: `1.5px solid ${isActive ? monColor : '#2a2848'}`,
         borderRadius: '1px',
         position: 'absolute', top: 0, left: '26px',
-        boxShadow: isActive && !isSdet ? `0 0 8px ${monColor}44` : 'none',
+        boxShadow: isActive ? `0 0 8px ${monColor}44` : 'none',
         overflow: 'hidden',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        opacity: isSdet ? 0.4 : 1,
       }}>
         <pre style={{
           fontSize: '10px', lineHeight: '1.4', padding: '3px', margin: 0,
-          color: isActive && !isSdet ? monColor : '#1a1830',
+          color: isActive ? monColor : '#1a1830',
           fontFamily: 'monospace',
         }}>
           {screenLines[agent.id] || '---'}
@@ -148,8 +135,6 @@ function AgentDesk({ agent }: { agent: ReturnType<typeof useAppStore.getState>['
         border: '1px solid #252240',
         borderRadius: '2px',
         marginTop: '62px',
-        opacity: isSdet ? 0.4 : 1,
-        borderStyle: isSdet ? 'dashed' : 'solid',
       }} />
     </div>
   )
@@ -276,7 +261,6 @@ export default function PixelOfficePage() {
                     <AgentCard
                       key={agent.id}
                       agent={agent}
-                      isComingSoon={agent.role === 'sdet'}
                     />
                   ))}
                 </>

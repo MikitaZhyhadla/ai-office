@@ -1,5 +1,4 @@
-import { callAgent } from "./callAgent"
-import { safeParseJson } from '@/lib/parseJson'
+import { callAgent, safeParseJson } from "./callAgent"
 import { buildAgentContext } from '@/lib/buildAgentContext'
 import type { Ticket, TechNotes } from "@/types"
 
@@ -60,7 +59,7 @@ Return a JSON object with this exact schema:
 export async function runDevTechNotesAgent(ticket: Ticket, projectDescription: string): Promise<TechNotes> {
   const contextBlock = buildAgentContext()
   const SYSTEM = contextBlock ? `${contextBlock}\n\n---\n\n${BASE_SYSTEM}` : BASE_SYSTEM
-  const raw = await callAgent(SYSTEM, buildUserPrompt(ticket, projectDescription), 'devLead', 4000)
+  const raw = await callAgent(SYSTEM, buildUserPrompt(ticket, projectDescription), 'devLead')
   const parsed = safeParseJson<TechNotes>(raw, FALLBACK_TECH_NOTES)
   if (parsed === FALLBACK_TECH_NOTES) {
     throw new Error('Generation incomplete — response was too long for this requirement.')
